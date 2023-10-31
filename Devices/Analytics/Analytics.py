@@ -2,7 +2,7 @@ import os.path
 
 import pandas as pd
 
-from Devices.utils.utils import read_yaml
+from utils.utils import read_yaml
 
 
 class Analytics:

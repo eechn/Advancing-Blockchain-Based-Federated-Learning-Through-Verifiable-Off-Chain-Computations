@@ -1,8 +1,8 @@
 import sys
 import threading
 import time
-from Devices.MiddleWare.BlockChainClient import BlockChainConnection
-from Devices.utils.utils import read_yaml
+from MiddleWare.BlockChainClient import BlockChainConnection
+from utils.utils import read_yaml
 from Edge_Device.EdgeDevice import EdgeDevice
 from MiddleWare.Middleware import MiddleWare
 
@@ -15,7 +15,7 @@ def start_Device(deviceName,accountNr,blockchain_connection,config_file):
 
 
 if __name__ == '__main__':
-    config_file = read_yaml("/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/CONFIG.yaml")
+    config_file = read_yaml("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CONFIG.yaml")
     blockchain_connection=BlockChainConnection(config_file=config_file)
     blockchain_connection.connect()
     for i in range(config_file["DEFAULT"]["NumberOfParticipants"]):

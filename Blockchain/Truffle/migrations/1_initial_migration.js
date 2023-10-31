@@ -5,8 +5,8 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 
 module.exports = function (deployer) {
- let fileContents = fs.readFileSync('/home/nikolas/PycharmProjects/MasterThesis_SoftwareEngineering/CONFIG.yaml', 'utf8');
-  let data = yaml.safeLoad(fileContents);
+ let fileContents = fs.readFileSync('/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CONFIG.yaml', 'utf8');
+  let data = yaml.load(fileContents);
   deployer.deploy(Migrations);
   deployer.deploy(FederatedModel,data.DEFAULT.InputDimension,data.DEFAULT.OutputDimension,data.DEFAULT.LearningRate,data.DEFAULT.Precision,data.DEFAULT.BatchSize,data.DEFAULT.IntervalTime);
   deployer.deploy(verifier,{gas:data.DEFAULT.Gas});

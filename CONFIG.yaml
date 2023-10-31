@@ -1,33 +1,38 @@
 DEFAULT:
-  DeviceDataPath: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data"
+  DeviceDataPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
   IntervalDataGenerator: 1
   NumberOfSamplesGenerated: 50
   MessageBrokerHost: "localhost"
   QueueBase: "Queue"
   InputDimension: 9
   OutputDimension: 6
-  NumberOfParticipants: 6
+  #NumberOfParticipants: 6
+  NumberOfParticipants: 2
   Epochs : 1
   LearningRate: 1000
   Precision: 10000
   WaitingTime: 2
-  BatchSize: 40
-  Rounds : 300
-  TestFilePath: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data/test_file.txt"
-  TrainFilePath: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data/"
+  #BatchSize: 40
+  BatchSize: 10
+  #Rounds : 300
+  Rounds : 12
+  TestFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt"
+  TrainFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
   IntervalTime: 40
   PercentOfDataGenerated: 0.0086
-  PerformProof: False
+  #PerformProof: False
+  PerformProof: True
   Gas: 100000000000000
+  #Gas: 1000000000000
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0xDA4c7181CA349fEA6287F5fd51817F1385302F0e"
-  VerifierContractAddress: "0x7ABc6100AFC090bA88483266344fD82cA3cdB69f"
-  ZokratesPath: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Verification/ZoKrates/root.zok"
-  VerificationBase: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Verification/SAVED_VERIFYER_10/"
-  FLContractABIPAth: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Blockchain/Truffle/build/contracts/FederatedModel.json"
-  AnalyticsOutBase: "/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/MiddleWare/Analytics/"
+  FLContractAddress: "0x5d944De1146f2C5114DA5de296d651C8aAA05259"  
+  VerifierContractAddress: "0x88A1118BC1a7DCe62694547C5F496E9129e63E91"
+  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
+  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
+  FLContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"
+  AnalyticsOutBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/MiddleWare/Analytics/"
   Activities : [5, 11, 12, 14, 15, 17]
   ActivitiesEncoded : [1,2,3,4,5,6]
   ActivityMappings:
@@ -48,6 +53,4 @@ DEFAULT:
     17: 6
 
 
-
-
-
+  

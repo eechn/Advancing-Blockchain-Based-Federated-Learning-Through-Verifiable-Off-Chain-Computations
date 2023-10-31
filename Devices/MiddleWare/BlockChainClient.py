@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 from web3 import Web3
-from Devices.utils.utils import read_yaml
+from utils.utils import read_yaml
 import json
 
 class BlockChainConnection:
@@ -23,38 +23,41 @@ class BlockChainConnection:
         self.FLcontractDeployed=self.web3Connection.eth.contract(address=self.FLcontractAddress,abi=self.FLcontractABI)
 
     def init_contract(self,accountNR):
-        if self.is_connected() and accountNR==0:
-             np.random.seed(4)
-             weights = np.random.randn(self.config["DEFAULT"]["OutputDimension"],self.config["DEFAULT"]["InputDimension"])*self.config["DEFAULT"]["Precision"]/5
-             bias = np.random.randn(self.config["DEFAULT"]["OutputDimension"],)*self.config["DEFAULT"]["Precision"]/5
-             weights = [[int(x) for x in y] for y in weights]
-             bias = [int(x) for x in bias]
-             thxHash= self.FLcontractDeployed.functions.initModel(weights,bias).transact({"from": self.web3Connection.eth.accounts[accountNR]})
-             self.__await_Trainsaction(thxHash)
-             thxHash= self.FLcontractDeployed.functions.map_temp_to_global().transact({"from": self.web3Connection.eth.accounts[accountNR]})
-             self.__await_Trainsaction(thxHash)
-             thxHash = self.FLcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
-             self.__await_Trainsaction(thxHash)
+        print("init contract 1 function*****")
+        print("accountNR", accountNR)
+        if self.is_connected() and accountNR == 0:
+            np.random.seed(4)
+            print("init contract 2 function*****")
+            weights = np.random.randn(self.config["DEFAULT"]["OutputDimension"],self.config["DEFAULT"]["InputDimension"])*self.config["DEFAULT"]["Precision"]/5
+            bias = np.random.randn(self.config["DEFAULT"]["OutputDimension"],)*self.config["DEFAULT"]["Precision"]/5
+            weights = [[int(x) for x in y] for y in weights]
+            bias = [int(x) for x in bias]
+            thxHash= self.FLcontractDeployed.functions.initModel(weights,bias).transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            self.__await_Trainsaction(thxHash)
+            thxHash= self.FLcontractDeployed.functions.map_temp_to_global().transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            self.__await_Trainsaction(thxHash)
+            thxHash = self.FLcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            self.__await_Trainsaction(thxHash)
 
     def __check_ZKP(self,proof,accountNR):
-         a=proof['proof']['a']
-         a=[Web3.toInt(hexstr=x) for x in a]
-         b=proof['proof']['b']
-         b=[[Web3.toInt(hexstr=x) for x in y] for y in b ]
-         c=proof['proof']['c']
-         c=[Web3.toInt(hexstr=x) for x in c]
-         inputs = proof['inputs']
-         inputs = [Web3.toInt(hexstr=x) for x in inputs]
-         #istrue= self.FLcontractDeployed.functions.checkZKP(a,b,c, inputs).call({"from": self.web3Connection.eth.accounts[accountNR]})
-         #print(f"AccountNr = {accountNR}: ZKP went through",istrue)
-         return a,b,c,inputs
+        a=proof['proof']['a']
+        a=[Web3.to_int(hexstr=x) for x in a]
+        b=proof['proof']['b']
+        b=[[Web3.to_int(hexstr=x) for x in y] for y in b ]
+        c=proof['proof']['c']
+        c=[Web3.to_int(hexstr=x) for x in c]
+        inputs = proof['inputs']
+        inputs = [Web3.to_int(hexstr=x) for x in inputs]
+        #istrue= self.FLcontractDeployed.functions.checkZKP(a,b,c, inputs).call({"from": self.web3Connection.eth.accounts[accountNR]})
+        #print(f"AccountNr = {accountNR}: ZKP went through",istrue)
+        return a,b,c,inputs
 
 
     def __await_Trainsaction(self,thxHash):
         self.web3Connection.eth.wait_for_transaction_receipt(thxHash)
 
     def is_connected(self):
-        return self.web3Connection.isConnected()
+        return self.web3Connection.is_connected()
 
     def get_LearningRate(self,accountNR):
         self.precision=self.__get_Precision(accountNR)
@@ -85,13 +88,14 @@ class BlockChainConnection:
         return bias
 
     def get_account_balance(self,accountNR):
-        return self.web3Connection.fromWei(self.web3Connection.eth.getBalance( self.web3Connection.eth.accounts[accountNR]), "ether")
+        return self.web3Connection.from_wei(self.web3Connection.eth.get_balance( self.web3Connection.eth.accounts[accountNR]), "ether")
 
 
     def roundUpdateOutstanding(self,accountNR):
         self.lock_newRound.acquire()
         newround=self.FLcontractDeployed.functions.roundUpdateOutstanding().call({"from": self.web3Connection.eth.accounts[accountNR]})
         if not newround:
+            print(f"AccountNr = {accountNR}: round check ****")
             try:
                 txhash=self.FLcontractDeployed.functions.end_update_round().transact(
                     {"from": self.web3Connection.eth.accounts[accountNR]})
@@ -111,24 +115,34 @@ class BlockChainConnection:
         if newround_refreshed and (not newround):
             print(f"AccountNr = {accountNR}: Round is finished starting new round =>")
             self.lock_newRound.release()
+            print(f"AccountNr = {accountNR}:return newround_refresehd if clause in roundUpdateOutstanding() in BlockChainConnection.py " ,  newround_refreshed, sep=" ")
             return newround_refreshed
         else:
             self.lock_newRound.release()
+            print(f"AccountNr = {accountNR}: return newround else clause in roundUpdateOutstanding() in BlockChainConnection.py" , newround, sep=" ")
             return newround
 
     def __update_with_proof(self,weights,bias,accountNR,proof):
-        a,b,c,inputs=self.__check_ZKP(proof,accountNR)
-        weights = [[int(x) for x in y] for y in weights]
-        bias = [int(x) for x in bias]
-        thxHash = self.FLcontractDeployed.functions.update_with_proof(weights, bias,a,b,c,inputs).transact(
+        print("in update_with_proof() in BlockChainConnection.py")
+        try:
+            a,b,c,inputs=self.__check_ZKP(proof,accountNR)
+            weights = [[int(x) for x in y] for y in weights]
+            bias = [int(x) for x in bias]
+            print("weights and bias in  __update_with_proof() weights: ", weights, "\n bias:  ", bias)
+            thxHash = self.FLcontractDeployed.functions.update_with_proof(weights, bias,a,b,c,inputs).transact(
             {"from": self.web3Connection.eth.accounts[accountNR]})
+        except Exception as e:
+            print("in update_with_proof() validation check: ", e)
+        print(f"AccountNr = {accountNR}, Round =", self.get_RoundNumber(accountNR), "txHash after check ZKP", thxHash, sep=" ")
         self.__await_Trainsaction(thxHash)
         print(f"AccountNr = {accountNR}: UPDATE SUCCESSFUL")
 
 
     def __update_without_proof(self,weights,bias,accountNR):
+        print("in update_without_proof() in BlockChainConnection.py")
         weights = [[int(x) for x in y] for y in weights]
         bias = [int(x) for x in bias]
+        print("weights and bias in  __update_without_proof() weights: ", weights, "\n bias:  ", bias)
         thxHash = self.FLcontractDeployed.functions.update_without_proof(weights, bias).transact(
             {"from": self.web3Connection.eth.accounts[accountNR]})
         self.__await_Trainsaction(thxHash)
@@ -136,6 +150,7 @@ class BlockChainConnection:
 
 
     def update(self,weights,bias,accountNR,proof=None):
+        print("proof in update() in BlockChainConnection.py")
         if self.config["DEFAULT"]["PerformProof"]:
             tries=5
             while tries>0:

@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import time
-from Devices.MessageBroker.Publisher import Publisher
-from Devices.utils.utils import read_yaml
+from MessageBroker.Publisher import Publisher
+from utils.utils import read_yaml
 
 
 class EdgeDevice:

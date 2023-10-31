@@ -3,6 +3,9 @@ import time
 
 import numpy as np
 
+import sys,os
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
 from Devices.MiddleWare.NeuralNet import  mse_prime
 import numpy as np
 
@@ -31,8 +34,9 @@ zokrates="zokrates"
 batchsize=10
 
 t1=time.time()
-zokrates_compile=[zokrates,"compile","-i","/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Verification/ZoKrates/root.zok",'--allow-unconstrained-variables']
+zokrates_compile=[zokrates,"compile","-i","/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok",'--allow-unconstrained-variables']
 g= subprocess.run(zokrates_compile, capture_output=True)
+print("compile result ", g.stdout.decode(), sep = " ")
 t2=time.time()
 print(f"Compilation for {batchsize} samples took {t2-t1} seconds")
 
@@ -72,9 +76,10 @@ for X in x:
     b = b - (error / learning_rate).astype(int)
 #,bias,bias_sign,x,x_sign,1,learning_rate,precision
 out=out_layer
-args=[weights,weights_sign,bias,bias_sign,x_train,x_train_sign,Y,learning_rate,precision,convert_matrix(w)[0],convert_matrix(b)[0]]
-zokrates_compute_witness=[zokrates,"compute-witness","-a"]
+args=[weights, weights_sign, bias, bias_sign, x_train, x_train_sign, Y, learning_rate, precision, convert_matrix(w)[0], convert_matrix(b)[0]]
 
+
+zokrates_compute_witness=[zokrates,"compute-witness","-a"]
 zokrates_compute_witness.extend(args_parser(args).split(" "))
 
 t1=time.time()
@@ -82,17 +87,21 @@ g= subprocess.run(zokrates_compute_witness, capture_output=True)
 t2=time.time()
 print(f"Computing witness for {batchsize} samples took {t2-t1} seconds")
 
+print("[Successful??? ]Computing witness ", g.stdout.decode(), sep="/n")
 
 zokrates_generate_proof=[zokrates,"generate-proof"]
 t1=time.time()
 g= subprocess.run(zokrates_generate_proof, capture_output=True)
 t2=time.time()
 print(f"Generating proof for {batchsize} samples took {t2-t1} seconds")
+print("[Successful??? ]Generating proof ", g.stdout.decode(), sep="/n")
 
 zokrates_export_verifier=[zokrates,"export-verifier"]
 t1=time.time()
 g= subprocess.run(zokrates_export_verifier, capture_output=True)
 t2=time.time()
 print(f"Exporting Verifier for {batchsize} samples took {t2-t1} seconds")
+print("[Successful??? ]Exporting Verifier ", g.stdout.decode(), sep="/n")
+
 conv = convert_matrix(out)
 print(conv)
