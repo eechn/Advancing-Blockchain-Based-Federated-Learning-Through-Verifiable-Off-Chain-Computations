@@ -4,7 +4,9 @@ import time
 from MiddleWare.BlockChainClient import BlockChainConnection
 from utils.utils import read_yaml
 from Edge_Device.EdgeDevice import EdgeDevice
-from MiddleWare.Middleware import MiddleWare
+#+++++fix
+#from MiddleWare.Middleware import MiddleWare
+from Authentication.Authentication import MiddleWare
 
 def start_Device(deviceName,accountNr,blockchain_connection,config_file):
     edgeDevice = EdgeDevice(deviceName, config_file=config_file)

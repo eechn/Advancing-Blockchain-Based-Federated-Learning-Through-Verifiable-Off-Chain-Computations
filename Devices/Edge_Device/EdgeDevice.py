@@ -37,7 +37,6 @@ class EdgeDevice:
         for key in activity_encoding.keys():
             self.data.loc[self.data['Activity'] == key, 'Activity'] = activity_encoding[key]
 
-
     def next_batch(self):
         p=self.config["DEFAULT"]["NumberOfSamplesGenerated"]
         batch=self.data.sample(p)

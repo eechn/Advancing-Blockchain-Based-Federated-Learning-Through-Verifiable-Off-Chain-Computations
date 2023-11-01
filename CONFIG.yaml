@@ -15,7 +15,7 @@ DEFAULT:
   #BatchSize: 40
   BatchSize: 10
   #Rounds : 300
-  Rounds : 12
+  Rounds : 20
   TestFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt"
   TrainFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
   IntervalTime: 40
@@ -52,5 +52,7 @@ DEFAULT:
     15: 5
     17: 6
 
-
+AUTHENTICATION:
+  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/verify.zok"
+  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/"
   
