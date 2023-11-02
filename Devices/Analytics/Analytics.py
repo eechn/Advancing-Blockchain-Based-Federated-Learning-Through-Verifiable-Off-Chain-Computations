@@ -1,8 +1,9 @@
-import os.path
+import os.path, sys
 
 import pandas as pd
 
-from utils.utils import read_yaml
+sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+from Devices.utils.utils import read_yaml
 
 
 class Analytics:

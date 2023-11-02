@@ -1,8 +1,9 @@
-import os
+import os, sys
 import pandas as pd
 import time
 from MessageBroker.Publisher import Publisher
-from utils.utils import read_yaml
+sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+from Devices.utils.utils import read_yaml
 
 
 class EdgeDevice:

@@ -165,8 +165,12 @@ contract FederatedModel{
     }
     //
     //
-   function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[183] calldata input) external TrainingMode {
-        require(this.checkZKP(a,b,c,input));
+   function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[201] calldata input) external TrainingMode {
+        uint[183] memory new_input;
+        for(uint256 i=0; i < 183; i++){
+            new_input[i] = input[i];
+        }
+        require(this.checkZKP(a,b,c,new_input));
         bool newUser=true;
         bool firstUser=true;
         address user=tx.origin;

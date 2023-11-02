@@ -3,7 +3,9 @@ import time
 
 import numpy as np
 from web3 import Web3
-from utils.utils import read_yaml
+import sys, os
+sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+from Devices.utils.utils import read_yaml
 import json
 
 class BlockChainConnection:
@@ -113,11 +115,11 @@ class BlockChainConnection:
         if newround_refreshed and (not newround):
             print(f"AccountNr = {accountNR}: Round is finished starting new round =>")
             self.lock_newRound.release()
-            print(f"AccountNr = {accountNR}:return newround_refresehd if clause in roundUpdateOutstanding() in BlockChainConnection.py " ,  newround_refreshed, sep=" ")
+            print(f"AccountNr = {accountNR}:return newround_refresehd in roundUpdateOutstanding() in BlockChainConnection.py " ,  newround_refreshed, sep=" ")
             return newround_refreshed
         else:
             self.lock_newRound.release()
-            print(f"AccountNr = {accountNR}: return newround else clause in roundUpdateOutstanding() in BlockChainConnection.py" , newround, sep=" ")
+            print(f"AccountNr = {accountNR}: return newround in roundUpdateOutstanding() in BlockChainConnection.py" , newround, sep=" ")
             return newround
 
     def __update_with_proof(self,weights,bias,accountNR,proof):
@@ -169,7 +171,7 @@ class BlockChainConnection:
                         print(f"AccountNr = {accountNR}: Update Failed")
                     tries -= 1
 
-                    
+
     def get_BatchSize(self,accountNR):
         return  self.FLcontractDeployed.functions.getBatchSize().call({"from":self.web3Connection.eth.accounts[accountNR]})
 
