@@ -2,9 +2,8 @@ from "utils/casts/field_to_u32.zok" import main as field_to_u32;
 from "utils/casts/u32_to_field.zok" import main as u32_to_field;
 from "utils/casts/field_to_u64.zok" import main as field_to_u64;
 from "utils/casts/u64_to_field.zok" import main as u64_to_field;
-from "ecc/babyjubjubParams" import BabyJubJubParams;
-import "signatures/verifyEddsa" as verifyEddsa;
-import "ecc/babyjubjubParams" as context;
+from "./verify.zok" import main as data_authenticity_check;
+from "./verify.zok" import MerkleTreeProofStruct, TREE_DEPTH;
 
 const field max = 0-1;
 const field threshold= 20888242871839275222246405745257275088548364400416034343698204186575808495617;
@@ -125,16 +124,10 @@ def backward_propagation_layer(field[ac][fe] w, field[ac] b, field[fe] x, field[
     return (w_temp, b_temp, w_sign_temp, b_sign_temp);
 }
 
-def data_authenticity_check(field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1) -> bool {
-    BabyJubJubParams context = context();
-    bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
-    log("*****Data authentication verification in Zokrates: {}", isVerified);
-    return isVerified;                                  
-}
-
-
 //,field[bs][fe] x_train, field[bs][fe] x_train_sign ,field[bs] y_train,field learning_rate,field precision
-def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1) -> bool{
+def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof) -> bool{
+
+    assert(data_authenticity_check(R, S, A, M0, M1, proof));
     field[ac] mut output_layer = [0;ac];
     field[ac] mut out_sign = [0;ac];
     field[ac] mut error = [0;ac];
@@ -148,9 +141,6 @@ def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, p
     field[ac][fe] mut w_sign_temp = w_sign;
     field[ac] mut b_temp = b;
     field[ac] mut b_sign_temp = b_sign;
-
-    assert(data_authenticity_check(R, S, A, M0, M1));
-    log("w is {}, b is {}, w_new is {}, b_new is {}", w, b, w_new, b_new);
 
     for u32 batch_idx in 0..bs {
        field[fe] sample = x_train[batch_idx];

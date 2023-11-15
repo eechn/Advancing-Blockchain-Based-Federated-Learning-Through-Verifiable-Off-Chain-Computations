@@ -285,7 +285,7 @@ def callback(ch, method, properties, body,args):
     model=args
     if isinstance(model,FederatedLearningModel):
         batch=pd.read_csv(io.BytesIO(body),header=0,index_col=0)
-        print("*** checkpoint callback() in MiddleWare.py batch: ", batch, "\n")
+        print("*** checkpoint  3 callback() in MiddleWare.py batch: ", batch, "\n")
         model.add_data_to_current_batch(batch)
 
 

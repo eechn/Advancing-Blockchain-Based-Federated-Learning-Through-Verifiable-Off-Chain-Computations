@@ -1,3 +1,4 @@
+//SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
 import "./verifier.sol";
@@ -32,6 +33,8 @@ contract FederatedModel{
     uint256 private batchSize;
     Verifier private verifier;
     bool private initialized = false;
+    //uint256 [][] private publicKey;
+    mapping (uint => uint256[]) private publicKey;
 
 
     constructor(uint256 id,uint256 od,int256 learning_rate_,int256 precision_,uint256 batchSize_,uint256 updateInterval_)public{
@@ -166,13 +169,13 @@ contract FederatedModel{
     //
     //
    function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[201] calldata input) external TrainingMode {
-        uint[183] memory new_input;
-        for(uint256 i=0; i < 183; i++){
+        uint[201] memory new_input;
+        for(uint256 i=0; i < 201; i++){
             new_input[i] = input[i];
         }
         require(this.checkZKP(a,b,c,new_input));
         bool newUser=true;
-        bool firstUser=true;
+        //bool firstUser=true;
         address user=tx.origin;
         if(this.participantsCount()==0){
             participating_devices.push(user);
@@ -197,7 +200,7 @@ contract FederatedModel{
 
 function update_without_proof(int256[][] calldata local_weights, int256[] calldata local_bias) external TrainingMode {
         bool newUser=true;
-        bool firstUser=true;
+       // bool firstUser=true;
         address user=tx.origin;
         if(this.participantsCount()==0){
             participating_devices.push(user);
@@ -283,6 +286,14 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
         learning_rate=newLearnignRate;
     }
 
+    function setPublicKey(uint256 accountNR, uint256[] calldata key)external{
+        publicKey[accountNR] = key;
+    }
+
+    function getPublicKey(uint256 accountNR)external view returns(uint256[] memory){
+        return publicKey[accountNR];
+    }
+
     function getLearningRate()external returns(int256){
         return learning_rate;
     }
@@ -312,7 +323,7 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
     }
 
 
-    function checkZKP(uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[183] memory input) public returns(bool) {
+    function checkZKP(uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[201] memory input) public returns(bool) {
         Verifier.Proof memory proof = Verifier.Proof(Pairing.G1Point(a[0],a[1]),Pairing.G2Point(b[0],b[1]),Pairing.G1Point(c[0],c[1]));
         return verifier.verifyTx(proof,input);
     }
@@ -326,6 +337,7 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
 
     //
     function random(uint256 seed) private view returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(block.difficulty, block.timestamp, seed)));
         return uint256(keccak256(abi.encodePacked(block.difficulty, block.timestamp, seed)));
 
     }

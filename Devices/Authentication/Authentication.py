@@ -21,6 +21,7 @@ from Devices.utils.utils import read_yaml
 
 #+++++fix
 from Authentication.Encryption import Encryption
+from Authentication.Encryption import write_args_for_zokrates_cli
 
 
 def print_report(device,model,X_test,y_test):
@@ -84,9 +85,9 @@ class FederatedLearningModel:
         self.x_train = self.x_train.to_numpy()
         self.y_train = self.y_train.to_numpy()
         self.scaler.fit(self.x_test.to_numpy())
-        self.x_train=self.scaler.transform(self.x_train)
+        self.x_train = self.scaler.transform(self.x_train)
         self.net.fit(self.x_train, self.y_train, epochs=self.epochs, learning_rate=self.learning_rate)
-        score=self.test_model()
+        score = self.test_model()
         print(f"{self.deviceName}:Score :",score)
         return batch;
 
@@ -137,83 +138,29 @@ class MiddleWare:
         self.consumer = Consumer()
         self.__init_Consumer(deviceName,callback)
         self.proof=None
-        #+++++fix
-        self.proof_auth=None
         self.precision=None
         self.batchSize=None
         self.round=0
         #+++++fix
-        self.key = Encryption()
+        self.auth = Encryption()
         self._init_for_data_authenticity()
         self.hashedData=None
         self.signature=None
 
     #+++++fix
     def _init_for_data_authenticity(self):
-    	self.key.generate_key_pair()
-    	
-    #+++++fix 
-    #To check zok verification of data authentication (for 2 step code)
-    def generate_hash_signature(self, plain):
-    	verification_base = self.config["AUTHENTICATION"]["VerificationBase"]
-    	path = verification_base + 'zokrates_inputs.txt'
-    	self.hashedData = self.key.hash_plain_data(plain)
-    	self.signature = self.key.get_signature(self.hashedData)
-    	self.key.generate_signature_for_zokrates_cli(self.key.pk, self.signature, self.hashedData, path)
-    	
-    
-    #+++++fix 
-    #To check zok verification of data authentication (for 2 step code)
-    def __generate_Proof_for_data_authentication(self):
-    	def args_parser(args):
-	        res = ""
-	        for arg in range(len(args)):
-	            entry = args[arg]
-	            if isinstance(entry, (list, np.ndarray)):
-	                for i in range(len(entry)):
-	                    row_i = entry[i]
-	                    if isinstance(row_i, (list, np.ndarray)):
-	                        for j in range(len(row_i)):
-	                            val = row_i[j]
-	                            res += str(val) + " "
-	                    else:
-	                        res += str(row_i) + " "
-	            else:
-	                res += str(args[arg]) + " "
-	        res = res[:-1]
-	        return res
-
-    	zokrates = "zokrates"
-    	verification_base=self.config["AUTHENTICATION"]["VerificationBase"]
-    	in_path = verification_base + 'zokrates_inputs.txt'
-    	out_path=verification_base+"out"
-    	abi_path=verification_base+"abi.json"
-    	witness_path=verification_base+"witness_"+self.deviceName
-    	zokrates_path=self.config["AUTHENTICATION"]["ZokratesPath"]
-        # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path, '--debug']
-        # g = subprocess.run(zokrates_compile, capture_output=True)
-        #print(f"{self.accountNR}, {self.deviceName}: zokrates for data authentication compile in MiddleWare,py", g.stdout.decode(), sep =" ")
-
-    	
-    	with open(in_path,'r') as f:
-    		zok_in = f.readlines()
-    	zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
-    	zokrates_compute_witness.extend(args_parser(zok_in).split(" "))
-    	g = subprocess.run(zokrates_compute_witness, capture_output=True)
-    	
-    	proof_path=verification_base+"proof_"+self.deviceName
-    	proving_key_path=verification_base+"proving.key"
-    	zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
-    	g = subprocess.run(zokrates_generate_proof, capture_output=True)
-    	with open(proof_path,'r+') as f:
-    		self.proof_auth=json.load(f)
-    	
-
-
-    def __generate_Proof(self,w,b,w_new,b_new,x_train,y_train,learning_rate):
-        x_train=x_train*self.precision
-        b_new=b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
+    	self.auth.generate_key_pair()
+    	pk = []
+    	pk.extend([self.auth.pk.p.x.n, self.auth.pk.p.y.n])
+    	self.blockChainConnection.set_PublicKey(self.accountNR, pk)
+ 
+    def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
+        x_train = x_train * self.precision
+        b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
         x_train = x_train.astype(int)
+
+        pk = self.blockChainConnection.get_PublicKey(self.accountNR)
+        
         def args_parser(args):
             res = ""
             for arg in range(len(args)):
@@ -237,40 +184,53 @@ class MiddleWare:
             m=np.array(m)
             return np.where(m < 0, max_field + m, m), np.where(m > 0, 0, 1)
 
+
+
+
         zokrates = "zokrates"
-        verification_base=self.config["DEFAULT"]["VerificationBase"]
+        zok_path = self.config["TEST"]["ZokratesPath"]
+        verification_path = self.config["TEST"]["VerificationBase"]
+        zokrates_path = zok_path + 'root.zok'
+        out_path=verification_path+"out"
+        abi_path = verification_path+"abi.json"
+        witness_path= verification_path + "witness_" + self.deviceName
+        proof_path=verification_path+"proof_" + self.deviceName
+        proving_key_path=verification_path+"proving.key"
+
         weights, weights_sign = convert_matrix(w)
         bias, bias_sign = convert_matrix(b)
         weights_new, _ = convert_matrix(w_new)
         bias_new, _ = convert_matrix(b_new)
         x, x_sign = convert_matrix(x_train)
-        args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision,
-                weights_new, bias_new]
-
-        #+++++fix 
-        verification_base=self.config["AUTHENTICATION"]["VerificationBase"]
-        in_path = verification_base + 'zokrates_inputs.txt'
-        out_path=verification_base+"out"
-        abi_path=verification_base+"abi.json"
-        witness_path=verification_base+"witness_"+self.deviceName
-        zokrates_path=self.config["DEFAULT"]["ZokratesPath"]
-        zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
-        # g = subprocess.run(zokrates_compile, capture_output=True)
-        # print(f"{self.accountNR}, {self.deviceName}: zokrates compile in MiddleWare,py", g.stdout.decode(), sep =" ")
-
-        with open(in_path,'r') as f:
-        	zok_in = f.readlines()
-        zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
-        zokrates_compute_witness.extend(args_parser(args).split(" "))
-        zokrates_compute_witness.extend(args_parser(zok_in).split(" "))
-        g = subprocess.run(zokrates_compute_witness, capture_output=True)
+        args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
+       	witness_args = args_parser(args).split(" ")
+       
+        merkleRoot, merkleTree = self.auth.get_merkletree(x)
+        idx = 0
+        merklePath = self.auth.calculate_merkle_path(idx, merkleTree, 90)
+        padding = bytes(32)
+        padded_512_msg = merkleRoot + padding
+        signature = self.auth.get_signature(padded_512_msg)
+        merkle_args = write_args_for_zokrates_cli(pk, signature, padded_512_msg, merkleTree[idx], merklePath, verification_path + "merkle_args.txt").split(" ")
+        witness_args.extend(merkle_args)
         
-        proof_path=verification_base+"proof_"+self.deviceName
-        proving_key_path=verification_base+"proving.key"
+        #Zokrates file compile
+        # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
+        # g = subprocess.run(zokrates_compile, capture_output=True)
+
+        #Witness computation
+        zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
+        zokrates_compute_witness.extend(witness_args)
+        g = subprocess.run(zokrates_compute_witness, capture_output=True)
+        #Proof generation
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
+       
+
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
+
+
 
 
     def __init_Consumer(self,DeviceName,callBackFunction):
@@ -294,59 +254,54 @@ class MiddleWare:
         self.blockChainConnection.init_contract(self.accountNR)
         self.round=self.blockChainConnection.get_RoundNumber(self.accountNR)
         print("Round ", self.round , f": {self.deviceName} in start_Middleware() ", sep=" ")
-        try: 
-            while self.config["DEFAULT"]["Rounds"]>self.round:
-                print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
-                outstanding_update=self.blockChainConnection.roundUpdateOutstanding(self.accountNR)
-                # print(f"{self.accountNR}, {self.deviceName} outstanding_update in start_Middleware() MiddleWare.py")
-                self.round = self.blockChainConnection.get_RoundNumber(self.accountNR)
-                # print(self.round , f"{self.deviceName} in while clause in start_Middleware() 2 **** ", sep=" ")
-                print(f"{self.accountNR}, {self.deviceName}: Round {self.round} Has update outstanding: ",outstanding_update)
-                if(outstanding_update):
-                    t=time.time()
-                    balance=self.blockChainConnection.get_account_balance(self.accountNR)
-                    global_weights=self.blockChainConnection.get_globalWeights(self.accountNR)
-                    global_bias=self.blockChainConnection.get_globalBias(self.accountNR)
-                    lr=self.blockChainConnection.get_LearningRate(self.accountNR)
-                    self.precision=self.blockChainConnection.get_Precision(self.accountNR)
-                    self.model.set_precision(precision=self.precision)
-                    self.model.set_learning_rate(lr)
-                    self.model.set_weights(global_weights)
-                    self.model.set_bias(global_bias)
-                    self.batchSize=self.blockChainConnection.get_BatchSize(self.accountNR)
-                    while(self.model.curr_batch is None):
-                        pass
-                    while(self.model.curr_batch.size < self.batchSize):
-                        pass
-                    self.model.set_batchSize(self.batchSize)
-                    tt=time.time()
-                    batch = self.model.process_Batch()
-                    self.generate_hash_signature(batch)
-                    self.analytics.add_round_training_local_time(self.round,time.time()-tt)
-                    self.analytics.add_round_score(self.round,self.model.test_model())
-                    self.analytics.add_round_classification_report(self.round,self.model.get_classification_report())
-                    w=self.model.get_weights()
-                    b=self.model.get_bias()
-                    if self.config["DEFAULT"]["PerformProof"]:
-                        tp=time.time()
-                        #+++++fix
-                        #self.generate_hash_signature(self.model.curr_batch)
-                        #self.__generate_Proof_for_data_authentication()
-                        self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
-                    	#print(f"{self.accountNR}, {self.deviceName} after _generate_Proof() in start_Middleware()")
-                    	#print(f"{self.accountNR}, {self.deviceName} generated proof: " , self.proof, sep=" ")
-                        self.analytics.add_round_proof_times(self.round, time.time() - tp)
-                    self.model.reset_batch()
-                    thread=threading.Thread(target=self.update,args=[w,b, self.proof, self.round, balance])
-                    thread.start()
-                    print(f"{self.deviceName}:Round {self.round} update took {time.time()-t} seconds")
-                    print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "th end ******")
-                    self.round+=1
-                    self.analytics.add_round_time(self.round,time.time()-t)
-                time.sleep(self.config["DEFAULT"]["WaitingTime"])
+        while self.config["DEFAULT"]["Rounds"]>self.round:
+            print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
+            outstanding_update=self.blockChainConnection.roundUpdateOutstanding(self.accountNR)
+            # print(f"{self.accountNR}, {self.deviceName} outstanding_update in start_Middleware() MiddleWare.py")
+            self.round = self.blockChainConnection.get_RoundNumber(self.accountNR)
+            # print(self.round , f"{self.deviceName} in while clause in start_Middleware() 2 **** ", sep=" ")
+            print(f"{self.accountNR}, {self.deviceName}: Round {self.round} Has update outstanding: ",outstanding_update)
+            if(outstanding_update):
+                t=time.time()
+                balance=self.blockChainConnection.get_account_balance(self.accountNR)
+                global_weights=self.blockChainConnection.get_globalWeights(self.accountNR)
+                global_bias=self.blockChainConnection.get_globalBias(self.accountNR)
+                lr=self.blockChainConnection.get_LearningRate(self.accountNR)
+                self.precision=self.blockChainConnection.get_Precision(self.accountNR)
+                self.model.set_precision(precision=self.precision)
+                self.model.set_learning_rate(lr)
+                self.model.set_weights(global_weights)
+                self.model.set_bias(global_bias)
+                self.batchSize=self.blockChainConnection.get_BatchSize(self.accountNR)
+                while(self.model.curr_batch is None):
+                    pass
+                while(self.model.curr_batch.size < self.batchSize):
+                    pass
+                self.model.set_batchSize(self.batchSize)
+                tt = time.time()
+               	try:
+                	batch = self.model.process_Batch()
+                except Exception as e:
+                	print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "error; ", e)
+                self.analytics.add_round_training_local_time(self.round,time.time()-tt)
+                self.analytics.add_round_score(self.round,self.model.test_model())
+                self.analytics.add_round_classification_report(self.round,self.model.get_classification_report())
+                w = self.model.get_weights()
+                b = self.model.get_bias()
+                if self.config["DEFAULT"]["PerformProof"]:
+                    tp = time.time()
+                    self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
+                	#print(f"{self.accountNR}, {self.deviceName} generated proof: " , self.proof, sep=" ")
+                    self.analytics.add_round_proof_times(self.round, time.time() - tp)
+                self.model.reset_batch()
+                thread=threading.Thread(target=self.update,args=[w,b, self.proof, self.round, balance])
+                thread.start()
+                print(f"{self.deviceName}:Round {self.round} update took {time.time()-t} seconds")
+                print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "th end ******")
+                self.round+=1
+                self.analytics.add_round_time(self.round,time.time()-t)
+            time.sleep(self.config["DEFAULT"]["WaitingTime"])
                 #self.__sleep_call(10)
-        except Exception as e:
-            print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "error; ", e)
         self.analytics.write_data()
 
     def __sleep_call(self, t):

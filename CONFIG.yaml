@@ -27,8 +27,8 @@ DEFAULT:
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0xAE47e28956a42D3a12d8ae872b16384a89c336Fd"  
-  VerifierContractAddress: "0xD00AB0Ca2E91026509482EA96EBE749b71704C17"
+  FLContractAddress: "0x541782e3225164Ff3111Ad89E561a5e82d1a4e71"  
+  VerifierContractAddress: "0x88d6122aCb3b0EbA9aF759E9c6001a09b103871f"
   ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
   VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
   FLContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"
@@ -52,7 +52,7 @@ DEFAULT:
     15: 5
     17: 6
 
-AUTHENTICATION:
-  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/verify.zok"
-  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/"
+TEST:
+  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates"
+  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/Verification/SAVED_VERIFYER_10/"
   

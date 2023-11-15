@@ -4,7 +4,6 @@ import time
 from MiddleWare.BlockChainClient import BlockChainConnection
 import sys, os
 sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
-
 from Devices.utils.utils import read_yaml
 from Edge_Device.EdgeDevice import EdgeDevice
 #+++++fix

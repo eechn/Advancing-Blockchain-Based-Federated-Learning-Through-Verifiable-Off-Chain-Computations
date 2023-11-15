@@ -183,6 +183,12 @@ class BlockChainConnection:
         self.precision = self.__get_Precision(accountNR)
         return self.precision
 
+    def set_PublicKey(self, accountNR, pubkey):
+        return  self.FLcontractDeployed.functions.setPublicKey(accountNR, pubkey).transact({"from":self.web3Connection.eth.accounts[accountNR]})
+
+    def get_PublicKey(self, accountNR):
+        return  self.FLcontractDeployed.functions.getPublicKey(accountNR).call({"from":self.web3Connection.eth.accounts[accountNR]})
+
 
 
 

@@ -1,11 +1,106 @@
+import "utils/pack/bool/unpack256" as unpack256;
+import "utils/casts/bool_array_to_u32_array" as bool_to_u32;
+from "utils/casts/u32_to_field.zok" import main as u32_to_field;
+import "hashes/sha256/embed/512bitPadded" as sha256;
+import "hashes/sha256/512bitPadded" as sha256_u32;
+
 from "ecc/babyjubjubParams" import BabyJubJubParams;
 import "signatures/verifyEddsa" as verifyEddsa;
 import "ecc/babyjubjubParams" as context;
 
-def main(private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1) -> bool {
-	BabyJubJubParams context = context();
-	
-    bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
 
-	return isVerified;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+const u32 bs = 10;
+const u32 fe = 9;
+const u32 total_hash_count = 182;
+const u32 TREE_DEPTH = 7;
+
+def hash(field data) -> u32[8] {
+    bool[256] padding = [false; 256];
+    bool[256] data_to_bits = unpack256(data);
+    bool[256] digest = sha256(padding, data_to_bits);
+    u32[8] digest_u32 = bool_to_u32(digest);
+    return digest_u32;
+}
+
+def min(u32 a, u32 b) -> u32 {
+    return a < b ? a : b;
+}
+
+/*
+def generate_merkletree(field[bs][fe] data) {
+
+    u32[total_hash_count][8] mut merkleTree = [[0; 8]; total_hash_count];
+
+    //Generate leaf hashes
+    u32 mut idx = 0;
+    for u32 i in 0..bs {
+        for u32 j in 0..fe {
+            idx = i * fe + j;
+            //log("hash: {}", hash(data[i][j]));
+            merkleTree[idx] = hash(data[i][j]);
+        }
+    }
+
+    
+    //Construct the Merkle tree
+    u32 mut str_idx = 0;
+    u32 mut end_idx = bs * fe -1;
+    u32 mut idx = str_idx;
+    u32 mut nxtIdx = 0;
+    
+    for u32 i in bs * fe .. total_hash_count {
+        str_idx = idx > end_idx ? end_idx+1 : str_idx;
+        end_idx = idx > end_idx ? i - 1 : end_idx;
+        nxtIdx = min(idx + 1, end_idx);
+        merkleTree[i] = sha256_u32(merkleTree[idx], merkleTree[nxtIdx]);
+        //log("idx: {}, merkletree: {}", i, merkleTree[i]);
+        idx = idx == end_idx ? idx + 1 : idx + 2;
+    }
+
+}
+*/
+
+
+// leave the root out of the struct as all the variables 
+// in the struct are all private and the root is public
+struct MerkleTreeProofStruct<DEPTH> {
+    u32[8] leaf;
+    bool[DEPTH] directionSelector; 
+    u32[DEPTH][8] path;
+}
+
+// directionSelector => true if current digest is on the rhs of the hash
+def select(bool condition, u32[8] left, u32[8] right) -> (u32[8], u32[8]) {
+    return (condition ? right : left, condition ? left : right);
+}
+
+// Merkle-Tree inclusion proof for tree depth <DEPTH> using sha256
+def merkleTreeProof<DEPTH>(u32[8] root, MerkleTreeProofStruct<DEPTH> proof) -> bool {
+    // Start from the leaf
+    u32[8] mut digest = proof.leaf;
+
+    // Loop up the tree
+    for u32 i in 0..DEPTH {
+        (u32[8], u32[8]) s = select(proof.directionSelector[i], digest, proof.path[i]);
+        digest = sha256_u32(s.0, s.1);
+    }
+
+    return digest == root;
+}
+
+//def main(u32[8] treeRoot ,private MerkleTreeProofStruct<TREE_DEPTH> proof) {
+def main(private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof) -> bool {
+
+    BabyJubJubParams context = context();
+    bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
+    bool isVerified_merkle = merkleTreeProof(M0, proof);
+    log("M0: {}", M0);
+    log("M1: {}", M1);
+    log("isVerified: {}", isVerified);
+    log("isVerified_merkle: {}", isVerified_merkle);
+
+    
+
+    return isVerified && isVerified_merkle;
+
 }
