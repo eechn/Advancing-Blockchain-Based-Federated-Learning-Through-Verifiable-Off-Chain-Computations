@@ -19,6 +19,7 @@ import os, sys
 sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 from Devices.utils.utils import read_yaml
 
+import hashlib
 #+++++fix
 from Authentication.Encryption import Encryption
 from Authentication.Encryption import write_args_for_zokrates_cli
@@ -226,11 +227,11 @@ class MiddleWare:
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
        
+        with open(verification_path+"/zokrates_input.txt", "w+") as file:
+        	file.write(" ".join(map(str, witness_args)))
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
-
-
 
 
     def __init_Consumer(self,DeviceName,callBackFunction):

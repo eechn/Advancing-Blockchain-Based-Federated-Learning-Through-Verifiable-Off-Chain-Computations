@@ -64,7 +64,7 @@ def generate_merkletree(field[bs][fe] data) {
 // leave the root out of the struct as all the variables 
 // in the struct are all private and the root is public
 struct MerkleTreeProofStruct<DEPTH> {
-	u32[8] leaf;
+	u32[8] mut leaf;
 	bool[DEPTH] directionSelector; 
 	u32[DEPTH][8] path;
 }

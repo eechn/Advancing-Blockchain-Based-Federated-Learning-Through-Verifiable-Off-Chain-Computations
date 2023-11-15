@@ -3,7 +3,7 @@ from "utils/casts/u32_to_field.zok" import main as u32_to_field;
 from "utils/casts/field_to_u64.zok" import main as field_to_u64;
 from "utils/casts/u64_to_field.zok" import main as u64_to_field;
 from "./verify.zok" import main as data_authenticity_check;
-from "./verify.zok" import MerkleTreeProofStruct, TREE_DEPTH;
+from "./verify.zok" import MerkleTreeProofStruct, TREE_DEPTH, hash;
 
 const field max = 0-1;
 const field threshold= 20888242871839275222246405745257275088548364400416034343698204186575808495617;
@@ -126,8 +126,14 @@ def backward_propagation_layer(field[ac][fe] w, field[ac] b, field[fe] x, field[
 
 //,field[bs][fe] x_train, field[bs][fe] x_train_sign ,field[bs] y_train,field learning_rate,field precision
 def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof) -> bool{
+    
 
-    assert(data_authenticity_check(R, S, A, M0, M1, proof));
+    MerkleTreeProofStruct<TREE_DEPTH> mut new_proof = proof;
+    u32[8] check_leaf = hash(x_train[0][0]);
+    new_proof.leaf = check_leaf;
+    bool isVerified = data_authenticity_check(R, S, A, M0, M1, new_proof);
+    assert(isVerified);
+
     field[ac] mut output_layer = [0;ac];
     field[ac] mut out_sign = [0;ac];
     field[ac] mut error = [0;ac];

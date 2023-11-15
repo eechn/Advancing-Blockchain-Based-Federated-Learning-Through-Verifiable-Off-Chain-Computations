@@ -25,7 +25,6 @@ class BlockChainConnection:
         self.FLcontractDeployed=self.web3Connection.eth.contract(address=self.FLcontractAddress,abi=self.FLcontractABI)
 
     def init_contract(self,accountNR):
-        print("in init contract(), accountNR: :", accountNR)
         if self.is_connected() and accountNR == 0:
             np.random.seed(4)
             weights = np.random.randn(self.config["DEFAULT"]["OutputDimension"],self.config["DEFAULT"]["InputDimension"])*self.config["DEFAULT"]["Precision"]/5
@@ -95,7 +94,6 @@ class BlockChainConnection:
         self.lock_newRound.acquire()
         newround=self.FLcontractDeployed.functions.roundUpdateOutstanding().call({"from": self.web3Connection.eth.accounts[accountNR]})
         if not newround:
-            print(f"AccountNr = {accountNR}: round check ****")
             try:
                 txhash=self.FLcontractDeployed.functions.end_update_round().transact(
                     {"from": self.web3Connection.eth.accounts[accountNR]})
@@ -123,7 +121,6 @@ class BlockChainConnection:
             return newround
 
     def __update_with_proof(self,weights,bias,accountNR,proof):
-        print("in update_with_proof() in BlockChainConnection.py")
         try:
             a,b,c,inputs=self.__check_ZKP(proof,accountNR)
             weights = [[int(x) for x in y] for y in weights]
@@ -137,7 +134,6 @@ class BlockChainConnection:
 
 
     def __update_without_proof(self,weights,bias,accountNR):
-        print("in update_without_proof() in BlockChainConnection.py")
         weights = [[int(x) for x in y] for y in weights]
         bias = [int(x) for x in bias]
         thxHash = self.FLcontractDeployed.functions.update_without_proof(weights, bias).transact(
@@ -147,7 +143,6 @@ class BlockChainConnection:
 
 
     def update(self,weights,bias,accountNR,proof=None):
-        print("proof in update() in BlockChainConnection.py")
         if self.config["DEFAULT"]["PerformProof"]:
             tries=5
             while tries>0:
