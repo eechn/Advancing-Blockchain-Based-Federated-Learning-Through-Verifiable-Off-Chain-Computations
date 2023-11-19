@@ -19,7 +19,7 @@ import os, sys
 sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 from Devices.utils.utils import read_yaml
 
-import hashlib
+import hashlib, random
 #+++++fix
 from Authentication.Encryption import Encryption
 from Authentication.Encryption import write_args_for_zokrates_cli
@@ -192,11 +192,11 @@ class MiddleWare:
         zok_path = self.config["TEST"]["ZokratesPath"]
         verification_path = self.config["TEST"]["VerificationBase"]
         zokrates_path = zok_path + 'root.zok'
-        out_path=verification_path+"out"
-        abi_path = verification_path+"abi.json"
+        out_path=zok_path+"out"
+        abi_path = zok_path+"abi.json"
         witness_path= verification_path + "witness_" + self.deviceName
         proof_path=verification_path+"proof_" + self.deviceName
-        proving_key_path=verification_path+"proving.key"
+        proving_key_path=zok_path+"proving.key"
 
         weights, weights_sign = convert_matrix(w)
         bias, bias_sign = convert_matrix(b)
@@ -206,13 +206,13 @@ class MiddleWare:
         args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
        	witness_args = args_parser(args).split(" ")
        
-        merkleRoot, merkleTree = self.auth.get_merkletree(x)
-        idx = 0
-        merklePath = self.auth.calculate_merkle_path(idx, merkleTree, 90)
+        nLeaf, merkleRoot, merkleTree = self.auth.get_merkletree_batch(x, x_sign, y_train)
+        idx = random.randrange(0, nLeaf)
+        merklePath = self.auth.calculate_merkle_path(idx, merkleTree, nLeaf)
         padding = bytes(32)
         padded_512_msg = merkleRoot + padding
         signature = self.auth.get_signature(padded_512_msg)
-        merkle_args = write_args_for_zokrates_cli(pk, signature, padded_512_msg, merkleTree[idx], merklePath, verification_path + "merkle_args.txt").split(" ")
+        merkle_args = write_args_for_zokrates_cli(pk, signature, padded_512_msg, merkleTree[idx], merklePath, idx, verification_path + "merkle_args.txt").split(" ")
         witness_args.extend(merkle_args)
         
         #Zokrates file compile
@@ -223,12 +223,13 @@ class MiddleWare:
         zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
         zokrates_compute_witness.extend(witness_args)
         g = subprocess.run(zokrates_compute_witness, capture_output=True)
+
         #Proof generation
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
        
-        with open(verification_path+"/zokrates_input.txt", "w+") as file:
-        	file.write(" ".join(map(str, witness_args)))
+        # with open(proof_path, "w+") as file:
+        # 	file.write(" ".join(map(str, witness_args)))
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)

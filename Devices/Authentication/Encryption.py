@@ -47,6 +47,53 @@ class Encryption:
 		write_signature_for_zokrates_cli(pk, sig, msg, path)
 
 
+	def get_merkletree_batch(self, x, x_sign, y):
+		#Generate leaf hashes
+		merkletree = []
+		for i in range(len(x)):
+			chunk = b''
+			for j in range(len(x[0])):
+				chunk += int.to_bytes(x[i][j], 32, "big")
+			merkletree.append(self.hash_plain_data(chunk))
+		
+		chunk = b''
+		for i in range(len(y)):
+			chunk += int.to_bytes(int(y[i]), 32, "big")
+		merkletree.append(self.hash_plain_data(chunk))
+
+		'''
+		#Add padding leaves to make the Merkle tree a balanced binary tree with leaves of powers of 2
+		def isPowerOf2(n):
+		    return (n&(n-1))==0
+
+		def findNextPowerOf2(n):
+		    n = n - 1
+		    while n & n - 1:
+		        n = n & n - 1       
+		    return n << 1
+
+		if not isPowerOf2(len(merkletree)):
+			padding = 0
+			for i in range(findNextPowerOf2(len(merkletree)) - len(merkletree)):
+				merkletree.append(self.hash_plain_data(padding))
+		'''
+
+		#Construct the Merkle tree
+		idx = 0
+		nLeaf = len(merkletree)
+		nSize = nLeaf
+		while nLeaf > 1:
+			for i in range(0, nLeaf, 2):
+				nxtIDx = min(i+1, nLeaf-1)
+				merkletree.append(self.hash_plain_data(merkletree[idx + i] + merkletree[idx + nxtIDx]))
+			idx += nLeaf
+			nLeaf = int((nLeaf + 1)/2)
+
+		with open("./merkletree_py.txt", 'w') as f:
+			f.writelines(i.hex()+ '\n' for i in merkletree)
+		return 0 if not merkletree else nSize, merkletree[-1], merkletree
+
+
 	def get_merkletree(self, original_data):
 	    #Generate leaf hashes
 	    merkletree = []
@@ -68,7 +115,6 @@ class Encryption:
 	    # with open("./merkletree_py.txt", 'w') as f:
 	    # 	f.writelines(i.hex()+ '\n' for i in merkletree)
 	    return 0 if not merkletree else merkletree[-1], merkletree
-
 
 	def calculate_merkle_path(self, n_index, merkle_tree, nSize):
 	    path = []
@@ -102,9 +148,10 @@ class Encryption:
 		return math.ceil(math.log2(nData))
 
 
-#def write_signature_for_zokrates_cli(pk, sig, msg, data, path):
-def write_args_for_zokrates_cli(pk, sig, msg, check_leaf, merkle_path, path):
+#def write_args_for_zokrates_cli(x, x_sign, y, pk, sig, msg, check_leaf, merkle_path, idx, path):
+def write_args_for_zokrates_cli(pk, sig, msg, check_leaf, merkle_path, idx, path):
     "Writes the input arguments for verifyEddsa in the ZoKrates stdlib to file."
+   
     sig_R, sig_S = sig
     args = [sig_R.x, sig_R.y, sig_S, pk[0], pk[1]]
     args = " ".join(map(str, args))
@@ -114,21 +161,19 @@ def write_args_for_zokrates_cli(pk, sig, msg, check_leaf, merkle_path, path):
     b0 = [str(int(M0[i:i+8], 16)) for i in range(0,len(M0), 8)]
     b1 = [str(int(M1[i:i+8], 16)) for i in range(0,len(M1), 8)]
     args = args + " " + " ".join(b0 + b1)
-
-    args = args + " " + " ".join([hash_to_u32(check_leaf)])   
+    
+    args = args + " " + " ".join([hash_to_u32(check_leaf)]) 
     position = []    
     hashes = []
     for step in merkle_path:
     	position.append(str(step['position']))
-    	hashes.append(hash_to_u32(step['hash']))
+    	hashes.append(hash_to_u32(step['hash']))  
+    args = args + " " + " ".join(position + hashes) 
+    args = args + " " + str(idx)
 
-  
-    args = args + " " + " ".join(position + hashes)
-
-
-    with open(path, "w+") as file:
-    	for l in args:
-    		file.write(l)
+    # with open(path, "w+") as file:
+    # 	for l in args:
+    # 		file.write(l)
 
     return args
 
@@ -189,25 +234,28 @@ def main():
 
 	scaler = StandardScaler()
 	x_test = x_test.sample(10)
+	y_test = y_test.sample(10)
 	x_test = x_test.to_numpy()
+	y_test = y_test.to_numpy()
 	scaler.fit(x_test)
 	x_test=scaler.transform(x_test)
 	x_test = x_test * 10000
 	x_test = x_test.astype(int)
 	x , x_sign = convert_matrix(x_test)
+	y_test = np.array(y_test)
 
 	
 	auth = Encryption()
 	auth.generate_key_pair()
-	merkleRoot, merkleTree = auth.get_merkletree(x)
+	nLeaf, merkleRoot, merkleTree = auth.get_merkletree_batch(x, x_sign, y_test)
 
 	idx = 0
-	merklePath = auth.calculate_merkle_path(idx, merkleTree, 90)
+	merklePath = auth.calculate_merkle_path(idx, merkleTree, nLeaf)
 	
 	padding = bytes(32)
 	padded_512_msg = merkleRoot + padding
 	signature = auth.get_signature(padded_512_msg)
-	write_args_for_zokrates_cli(auth.pk, signature, padded_512_msg, merkleTree[idx], merklePath)
+	write_args_for_zokrates_cli(x, x_sign, y_test, auth.pk, signature, padded_512_msg, merkleTree[idx], merklePath, idx, "./zokrates_input.txt")
 
 
 

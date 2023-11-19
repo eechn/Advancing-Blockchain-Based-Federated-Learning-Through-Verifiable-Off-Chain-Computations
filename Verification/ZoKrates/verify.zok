@@ -1,8 +1,8 @@
 import "utils/pack/bool/unpack256" as unpack256;
 import "utils/casts/bool_array_to_u32_array" as bool_to_u32;
-from "utils/casts/u32_to_field.zok" import main as u32_to_field;
 import "hashes/sha256/embed/512bitPadded" as sha256;
 import "hashes/sha256/512bitPadded" as sha256_u32;
+import "./sha256_multipleArgs" as sha256Chunk;
 
 from "ecc/babyjubjubParams" import BabyJubJubParams;
 import "signatures/verifyEddsa" as verifyEddsa;
@@ -11,8 +11,8 @@ import "ecc/babyjubjubParams" as context;
 
 const u32 bs = 10;
 const u32 fe = 9;
-const u32 total_hash_count = 182;
-const u32 TREE_DEPTH = 7;
+const u32 total_hash_count = 31;
+const u32 TREE_DEPTH = 4;
 
 def hash(field data) -> u32[8] {
 	bool[256] padding = [false; 256];
@@ -22,8 +22,66 @@ def hash(field data) -> u32[8] {
 	return digest_u32;
 }
 
+def batch_hash<N>(field[N] chunk) -> u32[8] {
+
+	bool[N][256] mut chunk_bool = [[false; 256]; N];
+	for u32 i in 0..N{
+		chunk_bool[i] = unpack256(chunk[i]);
+
+	}
+	u32[N][8] mut chunk_u32 = [[0x00000000; 8]; N];
+	for u32 i in 0..N{
+		chunk_u32[i] = bool_to_u32(chunk_bool[i]);
+	}
+	
+	u32[N * 8] mut chunk_hash_input = [0x00000000; N * 8];
+	for u32 i in 0..N{
+		for u32 j in 0..8{
+			chunk_hash_input[i*8 + j] = chunk_u32[i][j];
+		}
+	}
+	u32[8] digest= sha256Chunk(chunk_hash_input);
+	return digest;
+
+}
+
 def min(u32 a, u32 b) -> u32 {
 	return a < b ? a : b;
+}
+
+def generate_merkletree_batch(field[bs][fe] x, field[bs][fe] x_sign, field[bs] y_train) -> u32[total_hash_count][8] {
+
+	u32[total_hash_count][8] mut merkleTree = [[0; 8]; total_hash_count];
+
+	//Generate leaf hashes
+	u32 mut idx = 0;
+	for u32 i in 0..bs {
+		u32[8] mut digest= batch_hash::<fe>(x[i]);
+		merkleTree[i] = digest;
+		log("i: {}, hash: {}", i, digest);
+		idx = i;
+	}
+	merkleTree[idx + 1] = batch_hash::<bs>(y_train);
+
+	/*
+	//Construct the Merkle tree
+	u32 mut str_idx = 0;
+	u32 mut end_idx = idx;
+	u32 mut idx = str_idx;
+	u32 mut nxtIdx = 0;
+	
+	for u32 i in end_idx+1 .. total_hash_count {
+		str_idx = idx > end_idx ? end_idx+1 : str_idx;
+		end_idx = idx > end_idx ? i - 1 : end_idx;
+		nxtIdx = min(idx + 1, end_idx);
+		merkleTree[i] = sha256_u32(merkleTree[idx], merkleTree[nxtIdx]);
+		//log("idx: {}, merkletree: {}", i, merkleTree[i]);
+		idx = idx == end_idx ? idx + 1 : idx + 2;
+	}
+	*/
+
+	return merkleTree;
+
 }
 
 /*
@@ -83,19 +141,29 @@ def merkleTreeProof<DEPTH>(u32[8] root, MerkleTreeProofStruct<DEPTH> proof) -> b
 	for u32 i in 0..DEPTH {
 		(u32[8], u32[8]) s = select(proof.directionSelector[i], digest, proof.path[i]);
 		digest = sha256_u32(s.0, s.1);
+		//log("digest during merlke tree proof: {}", digest);
 	}
 
     return digest == root;
 }
 
 //def main(u32[8] treeRoot ,private MerkleTreeProofStruct<TREE_DEPTH> proof) {
-def main(field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, MerkleTreeProofStruct<TREE_DEPTH> proof) -> bool {
+def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, MerkleTreeProofStruct<TREE_DEPTH> proof, u32 idx) -> bool {
+	//assert(idx < bs + 2)
+	//u32[total_hash_count][8] mut merkleTree = generate_merkletree_batch(x_train, x_sign, y_train);
+	//log("merkleTree: {}", merkleTree);
 
+	u32[8] mut digest= batch_hash::<fe>(x_train[idx]);
+	log("index hash: {}", digest);
+
+	MerkleTreeProofStruct<TREE_DEPTH> mut new_proof = proof;
+    new_proof.leaf = digest;
+    
 	BabyJubJubParams context = context();
 	bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
-	bool isVerified_merkle = merkleTreeProof(M0, proof);
-	log("M0: {}", M0);
-	log("M1: {}", M1);
+	bool isVerified_merkle = merkleTreeProof(M0, new_proof);
+	log("M0: {}", M0); //merkle root
+	log("M1: {}", M1); //padding
 	log("isVerified: {}", isVerified);
 	log("isVerified_merkle: {}", isVerified_merkle);
 
