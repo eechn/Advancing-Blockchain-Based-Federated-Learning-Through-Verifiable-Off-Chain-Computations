@@ -91,6 +91,6 @@ def divide_participants():
 
 
 
-if __name__ == '__main__':
-   #divide_participants()
+if __name__ == '__main__': 
    whole_merge()
+   divide_participants()
