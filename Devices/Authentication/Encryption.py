@@ -9,6 +9,7 @@ import pandas as pd
 from Devices.utils.utils import read_yaml
 from sklearn.preprocessing import StandardScaler
 import numpy as np
+import subprocess, json
 
 class Encryption:
 
@@ -45,8 +46,102 @@ class Encryption:
 	def generate_signature_for_zokrates_cli(self, pk, sig, msg, path):
 		#path = 'zokrates_inputs.txt'
 		write_signature_for_zokrates_cli(pk, sig, msg, path)
+		
+
+	#Generate ZoKrates-friendly poseidon hash
+	def poseidon_hash(self, data):
+		def args_parser(args):
+		    res = ""
+		    for arg in range(len(args)):
+		        entry = args[arg]
+		        if isinstance(entry, (list, np.ndarray)):
+		            for i in range(len(entry)):
+		                row_i = entry[i]
+		                if isinstance(row_i, (list, np.ndarray)):
+		                    for j in range(len(row_i)):
+		                        val = row_i[j]
+		                        res += str(val) + " "
+		                else:
+		                    res += str(row_i) + " "
+		        else:
+		            res += str(args[arg]) + " "
+		    res = res[:-1]
+		    return res
+
+		#For generating leaves
+		base_path = "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/"
+		if len(data) == 6:
+			out_path = base_path + "poseidon/poseidon_leaf"
+			abi_path = base_path + "poseidon/leaf.json"
+			witness_path = base_path + "poseidon/leaf_witness"
+			proof_path = base_path + "poseidon/leaf_proof"
+			proving_key_path = base_path + "poseidon/leaf_proving.key"
+			witness_args = args_parser(data).split(" ")
+			
+		elif len(data) == 2: 
+			out_path = base_path + "poseidon/poseidon_tree"
+			abi_path = base_path + "poseidon/tree.json"
+			witness_path = base_path + "poseidon/tree_witness"
+			proof_path = base_path + "poseidon/tree_proof"
+			proving_key_path = base_path + "poseidon/tree_proving.key"
+			witness_args = args_parser([int(data[0],16), int(data[1],16)]).split(" ")
+		else:
+			return
+
+		zokrates = "zokrates"
+		zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
+		zokrates_compute_witness.extend(witness_args)
+		g = subprocess.run(zokrates_compute_witness, capture_output=True)
+		zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
+		g = subprocess.run(zokrates_generate_proof, capture_output=True)
+
+		with open(proof_path,'r+') as f:
+		    proof=json.load(f)
+		    res = proof['inputs'][-1]
+
+		return res[2:]
 
 
+	#Hash data in batch with poseidon hash function (V2.0)
+	def get_merkletree_poseidon(self, x, x_sign, y):
+		data = []
+		idx = 0
+		for i in range(len(x)):
+			for j in range(len(x[0])):
+				data.append(x[i][j])
+
+		for i in range(len(y)):
+			data.append(y[i])
+
+		if len(data)%6 != 0:
+			nPadding = (int(len(data)/6) + 1) * 6 - len(data)
+			for i in range(nPadding):
+				data.append(0)
+
+
+		#Generate leaf hashes
+		merkletree = []
+		for i in range(int(len(data)/6)):
+			merkletree.append(self.poseidon_hash(data[i*6: i*6 + 6]))
+
+		
+		# #Construct the Merkle tree
+		idx = 0
+		nLeaf = len(merkletree)
+		nSize = nLeaf
+		while nLeaf > 1:
+			for i in range(0, nLeaf, 2):
+				nxtIDx = min(i+1, nLeaf-1)
+				merkletree.append(self.poseidon_hash([merkletree[idx + i], merkletree[idx + nxtIDx]]))
+			idx += nLeaf
+			nLeaf = int((nLeaf + 1)/2)
+
+		# with open("./merkletree_py.txt", 'w') as f:
+		# 	f.writelines(i.hex()+ '\n' for i in merkletree)
+		return 0 if not merkletree else nSize, merkletree[-1], merkletree
+
+
+	#Hash data in batch with sha256 hash function (V1.0)
 	def get_merkletree_batch(self, x, x_sign, y):
 		#Generate leaf hashes
 		merkletree = []
@@ -93,7 +188,7 @@ class Encryption:
 			f.writelines(i.hex()+ '\n' for i in merkletree)
 		return 0 if not merkletree else nSize, merkletree[-1], merkletree
 
-
+	#Hash entire data (V0.5)
 	def get_merkletree(self, original_data):
 	    #Generate leaf hashes
 	    merkletree = []
@@ -116,6 +211,7 @@ class Encryption:
 	    # 	f.writelines(i.hex()+ '\n' for i in merkletree)
 	    return 0 if not merkletree else merkletree[-1], merkletree
 
+
 	def calculate_merkle_path(self, n_index, merkle_tree, nSize):
 	    path = []
 	    j = 0
@@ -134,26 +230,27 @@ class Encryption:
     	# 	print(f"Hash: {step['hash']}, Position: {step['position']}, Position: {step['idx']}")
 	    return path
 
-
+	#Calculate the number of total hashes; the number needs to be specified in root.zok
 	def calculate_total_hashes(self, nData:  int) -> int:
 		if nData == 0:
 			return 0
 		elif nData == 1:
 			return 1
 		else:
-			return nData + calculate_total_hashes(int(nData/2) if nData % 2 == 0 else int((nData + 1)/2))
+			return nData + self.calculate_total_hashes(int(nData/2) if nData % 2 == 0 else int((nData + 1)/2))
 
 
 	def get_merkleTree_depth(self, nData: int) -> int:
 		return math.ceil(math.log2(nData))
 
 
-#def write_args_for_zokrates_cli(x, x_sign, y, pk, sig, msg, check_leaf, merkle_path, idx, path):
+#Getting args for zokrates cli when using merkle path
 def write_args_for_zokrates_cli(pk, sig, msg, check_leaf, merkle_path, idx, path):
     "Writes the input arguments for verifyEddsa in the ZoKrates stdlib to file."
    
     sig_R, sig_S = sig
     args = [sig_R.x, sig_R.y, sig_S, pk[0], pk[1]]
+    
     args = " ".join(map(str, args))
    
     M0 = msg.hex()[:64] #merkleRoot
@@ -176,6 +273,59 @@ def write_args_for_zokrates_cli(pk, sig, msg, check_leaf, merkle_path, idx, path
     # 		file.write(l)
 
     return args
+
+def write_args_for_zokrates_cli_poseidon(pk, sig, msg):
+    "Writes the input arguments for verifyEddsa in the ZoKrates stdlib to file."
+   
+    sig_R, sig_S = sig
+    #args = [sig_R.x, sig_R.y, sig_S, pk.p.x.n, pk.p.y.n]
+    args = [sig_R.x, sig_R.y, sig_S, pk[0], pk[1]]
+    args = " ".join(map(str, args))
+
+    M0 = msg.hex()[:64]
+    M1 = msg.hex()[64:]
+    b0 = [str(int(M0[i:i+8], 16)) for i in range(0,len(M0), 8)]
+    b1 = [str(int(M1[i:i+8], 16)) for i in range(0,len(M1), 8)]
+    args = args + " " + " ".join(b0 + b1)
+
+    return args
+
+#Test purpose
+def write_args_for_zokrates_cli_input(x, x_sign, y, pk, sig, msg):
+	def args_parser(args):
+		    res = ""
+		    for arg in range(len(args)):
+		        entry = args[arg]
+		        if isinstance(entry, (list, np.ndarray)):
+		            for i in range(len(entry)):
+		                row_i = entry[i]
+		                if isinstance(row_i, (list, np.ndarray)):
+		                    for j in range(len(row_i)):
+		                        val = row_i[j]
+		                        res += str(val) + " "
+		                else:
+		                    res += str(row_i) + " "
+		        else:
+		            res += str(args[arg]) + " "
+		    res = res[:-1]
+		    return res
+
+	args = " ".join(map(str, args_parser([x, x_sign, y]).split(" ")))
+	print(" CHECKPOINT 1 ",args)
+	sig_R, sig_S = sig
+	args1 = [sig_R.x, sig_R.y, sig_S, pk.p.x.n, pk.p.y.n]
+	#args = [sig_R.x, sig_R.y, sig_S, pk[0], pk[1]]
+	args = args + " " +  " ".join(map(str, args1))
+	
+
+	M0 = msg.hex()[:64]
+	M1 = msg.hex()[64:]
+	b0 = [str(int(M0[i:i+8], 16)) for i in range(0,len(M0), 8)]
+	b1 = [str(int(M1[i:i+8], 16)) for i in range(0,len(M1), 8)]
+	args = args + " " + " ".join(b0 + b1)
+
+	print(args)
+	return args
 
 
 def hash_to_u32(val: bytes) -> str:
@@ -233,8 +383,8 @@ def main():
 
 
 	scaler = StandardScaler()
-	x_test = x_test.sample(10)
-	y_test = y_test.sample(10)
+	x_test = x_test.sample(40)
+	y_test = y_test.sample(40)
 	x_test = x_test.to_numpy()
 	y_test = y_test.to_numpy()
 	scaler.fit(x_test)
@@ -247,21 +397,22 @@ def main():
 	
 	auth = Encryption()
 	auth.generate_key_pair()
-	nLeaf, merkleRoot, merkleTree = auth.get_merkletree_batch(x, x_sign, y_test)
-
-	idx = 0
-	merklePath = auth.calculate_merkle_path(idx, merkleTree, nLeaf)
-	
+	#nLeaf, merkleRoot, merkleTree = auth.get_merkletree_batch(x, x_sign, y_test)
+	# idx = 0
+	# merklePath = auth.calculate_merkle_path(idx, merkleTree, nLeaf)
+	nLeaf, merkleRoot, merkleTree = auth.get_merkletree_poseidon(x, x_sign, y_test)
+	print("total hashes", auth.calculate_total_hashes(nLeaf))
 	padding = bytes(32)
-	padded_512_msg = merkleRoot + padding
+	padded_512_msg = bytes.fromhex(merkleRoot) + padding
 	signature = auth.get_signature(padded_512_msg)
-	write_args_for_zokrates_cli(x, x_sign, y_test, auth.pk, signature, padded_512_msg, merkleTree[idx], merklePath, idx, "./zokrates_input.txt")
+	write_args_for_zokrates_cli_input(x, x_sign, y_test, auth.pk, signature, padded_512_msg)
+	#write_args_for_zokrates_cli(auth.pk, signature, padded_512_msg, merkleTree[idx], merklePath, idx, "./zokrates_input.txt")
 
 
 
 if __name__ == '__main__':
 	main()
-    
+
 
 
 	

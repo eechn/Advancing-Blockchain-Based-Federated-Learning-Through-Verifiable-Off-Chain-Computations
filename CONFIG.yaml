@@ -27,8 +27,8 @@ DEFAULT:
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0xda6C4FfEB79F07DB652F9dfdFf78F3B956250BF6"  
-  VerifierContractAddress: "0x242917730A77F872A6434a08D3F541C1A65d21B0"
+  FLContractAddress: "0xA6FB6eD5944d15B8A6Ca6C5a59fFC078526786CD"  
+  VerifierContractAddress: "0x1E8815792A2A4E2BC0E6eE8099ab4BE462C62883"
   ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
   VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
   FLContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"

@@ -22,7 +22,7 @@ from Devices.utils.utils import read_yaml
 import hashlib, random
 #+++++fix
 from Authentication.Encryption import Encryption
-from Authentication.Encryption import write_args_for_zokrates_cli
+from Authentication.Encryption import write_args_for_zokrates_cli_poseidon
 
 
 def print_report(device,model,X_test,y_test):
@@ -185,9 +185,6 @@ class MiddleWare:
             m=np.array(m)
             return np.where(m < 0, max_field + m, m), np.where(m > 0, 0, 1)
 
-
-
-
         zokrates = "zokrates"
         zok_path = self.config["TEST"]["ZokratesPath"]
         verification_path = self.config["TEST"]["VerificationBase"]
@@ -206,13 +203,13 @@ class MiddleWare:
         args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
        	witness_args = args_parser(args).split(" ")
        
-        nLeaf, merkleRoot, merkleTree = self.auth.get_merkletree_batch(x, x_sign, y_train)
-        idx = random.randrange(0, nLeaf)
-        merklePath = self.auth.calculate_merkle_path(idx, merkleTree, nLeaf)
+        nLeaf, merkleRoot, merkleTree = self.auth.get_merkletree_poseidon(x, x_sign, y_train)
+        #idx = random.randrange(0, nLeaf)
+        #merklePath = self.auth.calculate_merkle_path(idx, merkleTree, nLeaf)
         padding = bytes(32)
-        padded_512_msg = merkleRoot + padding
+        padded_512_msg = bytes.fromhex(merkleRoot) + padding
         signature = self.auth.get_signature(padded_512_msg)
-        merkle_args = write_args_for_zokrates_cli(pk, signature, padded_512_msg, merkleTree[idx], merklePath, idx, verification_path + "merkle_args.txt").split(" ")
+        merkle_args = write_args_for_zokrates_cli_poseidon(pk, signature, padded_512_msg).split(" ")
         witness_args.extend(merkle_args)
         
         #Zokrates file compile
@@ -228,11 +225,12 @@ class MiddleWare:
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
        
-        # with open(proof_path, "w+") as file:
-        # 	file.write(" ".join(map(str, witness_args)))
+        with open("./zokrates_input.txt", "w+") as file:
+        	file.write(" ".join(map(str, witness_args)))
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
+            print(len(self.proof['inputs']))
 
 
     def __init_Consumer(self,DeviceName,callBackFunction):

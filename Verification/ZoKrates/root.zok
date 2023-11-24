@@ -125,9 +125,10 @@ def backward_propagation_layer(field[ac][fe] w, field[ac] b, field[fe] x, field[
 }
 
 //,field[bs][fe] x_train, field[bs][fe] x_train_sign ,field[bs] y_train,field learning_rate,field precision
-def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof, private u32 idx) -> bool{
+//def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof, private u32 idx) -> bool{
+def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1) -> bool{
 
-    bool isVerified = data_authenticity_check(x_train, x_train_sign, y_train, R, S, A, M0, M1, proof, idx);
+    bool isVerified = data_authenticity_check(x_train, x_train_sign, y_train, R, S, A, M0, M1);
     assert(isVerified);
 
     field[ac] mut output_layer = [0;ac];
