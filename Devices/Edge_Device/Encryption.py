@@ -34,7 +34,6 @@ class Encryption:
 
 
 	def get_signature(self, hashedData: bytes):
-		print("CHECKPOINT 1: secret key", self.sk)
 		signature = self.sk.sign(hashedData)
 		return signature
 
@@ -47,27 +46,27 @@ class Encryption:
 	def generate_signature_for_zokrates_cli(self, pk, sig, msg, path):
 		#path = 'zokrates_inputs.txt'
 		write_signature_for_zokrates_cli(pk, sig, msg, path)
-
+		
 
 	#Generate ZoKrates-friendly poseidon hash
 	def poseidon_hash(self, data):
 		def args_parser(args):
-		    res = ""
-		    for arg in range(len(args)):
-		        entry = args[arg]
-		        if isinstance(entry, (list, np.ndarray)):
-		            for i in range(len(entry)):
-		                row_i = entry[i]
-		                if isinstance(row_i, (list, np.ndarray)):
-		                    for j in range(len(row_i)):
-		                        val = row_i[j]
-		                        res += str(val) + " "
-		                else:
-		                    res += str(row_i) + " "
-		        else:
-		            res += str(args[arg]) + " "
-		    res = res[:-1]
-		    return res
+			res = ""
+			for arg in range(len(args)):
+				entry = args[arg]
+				if isinstance(entry, (list, np.ndarray)):
+					for i in range(len(entry)):
+						row_i = entry[i]
+						if isinstance(row_i, (list, np.ndarray)):
+							for j in range(len(row_i)):
+								val = row_i[j]
+								res += str(val) + " "
+						else:
+							res += str(row_i) + " "
+				else:
+					res += str(args[arg]) + " "
+			res = res[:-1]
+			return res
 
 		#For generating leaves
 		base_path = "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/"
@@ -97,8 +96,8 @@ class Encryption:
 		g = subprocess.run(zokrates_generate_proof, capture_output=True)
 
 		with open(proof_path,'r+') as f:
-		    proof=json.load(f)
-		    res = proof['inputs'][-1]
+			proof=json.load(f)
+			res = proof['inputs'][-1]
 
 		return res[2:]
 
@@ -119,11 +118,11 @@ class Encryption:
 			for i in range(nPadding):
 				data.append(0)
 
-
 		#Generate leaf hashes
 		merkletree = []
 		for i in range(int(len(data)/6)):
 			merkletree.append(self.poseidon_hash(data[i*6: i*6 + 6]))
+			#print(int(str(self.poseidon_hash(data[i*6: i*6 + 6])),16))
 
 		
 		# #Construct the Merkle tree
@@ -134,6 +133,7 @@ class Encryption:
 			for i in range(0, nLeaf, 2):
 				nxtIDx = min(i+1, nLeaf-1)
 				merkletree.append(self.poseidon_hash([merkletree[idx + i], merkletree[idx + nxtIDx]]))
+				#print(int(str(self.poseidon_hash([merkletree[idx + i], merkletree[idx + nxtIDx]])), 16))
 			idx += nLeaf
 			nLeaf = int((nLeaf + 1)/2)
 
@@ -312,7 +312,7 @@ def write_args_for_zokrates_cli_input(x, x_sign, y, pk, sig, msg):
 		    return res
 
 	args = " ".join(map(str, args_parser([x, x_sign, y]).split(" ")))
-
+	print(" CHECKPOINT 1 ",args)
 	sig_R, sig_S = sig
 	args1 = [sig_R.x, sig_R.y, sig_S, pk.p.x.n, pk.p.y.n]
 	#args = [sig_R.x, sig_R.y, sig_S, pk[0], pk[1]]

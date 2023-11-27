@@ -5,6 +5,8 @@ import "hashes/sha256/512bitPadded" as sha256_u32;
 import "./sha256_multipleArgs" as sha256Chunk;
 import "hashes/poseidon/poseidon" as poseidon;
 
+
+
 from "ecc/babyjubjubParams" import BabyJubJubParams;
 import "signatures/verifyEddsa" as verifyEddsa;
 import "ecc/babyjubjubParams" as context;
@@ -74,6 +76,7 @@ def generate_merkletree_poseidon(field[bs][fe] x, field[bs][fe] x_sign, field[bs
 		field mut digest= poseidon(data[i*6..i*6+6]);
 		merkleTree[i] = digest;
 		idx = i;
+		log("i: {}, hash: {}", i, digest);
 	}
 
 	//Construct the Merkle tree
@@ -87,6 +90,7 @@ def generate_merkletree_poseidon(field[bs][fe] x, field[bs][fe] x_sign, field[bs
 		end_idx = idx > end_idx ? i - 1 : end_idx;
 		nxtIdx = min(idx + 1, end_idx);
 		merkleTree[i] = poseidon([merkleTree[idx], merkleTree[nxtIdx]]);
+		log("i: {}, hash: {}", i, merkleTree[i]);
 		idx = idx == end_idx ? idx + 1 : idx + 2;
 	}
 	return merkleTree[total_hash_count-1];
@@ -193,7 +197,7 @@ def merkleTreeProof<DEPTH>(u32[8] root, MerkleTreeProofStruct<DEPTH> proof) -> b
 }
 
 //def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, MerkleTreeProofStruct<TREE_DEPTH> proof, u32 idx) -> bool {
-def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1) -> bool {
+def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, u32[8] commitment) -> bool {
 	/*
 	u32[total_hash_count][8] mut merkleTree = generate_merkletree_batch(x_train, x_sign, y_train);
 	u32[8] mut digest= batch_hash::<fe>(x_train[idx]);
@@ -203,6 +207,22 @@ def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, fiel
     bool isVerified_merkle = merkleTreeProof(M0, new_proof);
     */
 
+	bool[256] pubX = unpack256(A[0]);
+    bool[256] pubY = unpack256(A[1]);
+	bool[256] hash_bool = sha256(pubX, pubY);
+	u32[8] hash = bool_to_u32(hash_bool);
+
+	bool isVerified_Commitment = hash == commitment;
+	log("hash: {}", hash);
+	log("commitment: {}", commitment);
+	log("isVerified_Commitment: {}", isVerified_Commitment);
+	
+	BabyJubJubParams context = context();
+	bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
+	log("isVerified: {}", isVerified);
+
+
+
 	field mut merkleTree = generate_merkletree_poseidon(x_train, x_sign, y_train);
 	bool[256] data_to_bits = unpack256(merkleTree);
 	u32[8] merkleRoot = bool_to_u32(data_to_bits);
@@ -211,11 +231,7 @@ def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, fiel
 	bool isVerified_merkle = M0 == merkleRoot ? true : false;
 	log("isVerified_merkle: {}", isVerified_merkle);
 	
-	BabyJubJubParams context = context();
-	bool isVerified = verifyEddsa(R, S, A, M0, M1, context);
-	log("isVerified: {}", isVerified);
-	log("isVerified_merkle: {}", isVerified_merkle);
 
-	return isVerified && isVerified_merkle;
+	return isVerified && isVerified_merkle && isVerified_Commitment;
 
 }

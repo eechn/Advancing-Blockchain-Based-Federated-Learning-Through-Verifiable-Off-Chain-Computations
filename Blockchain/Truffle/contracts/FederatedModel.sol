@@ -168,9 +168,9 @@ contract FederatedModel{
     }
     //
     //
-   function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[201] calldata input) external TrainingMode {
-        uint[201] memory new_input;
-        for(uint256 i=0; i < 201; i++){
+   function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
+        uint[209] memory new_input;
+        for(uint256 i=0; i < 209; i++){
             new_input[i] = input[i];
         }
         require(this.checkZKP(a,b,c,new_input));
@@ -286,13 +286,6 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
         learning_rate=newLearnignRate;
     }
 
-    function setPublicKey(uint256 accountNR, uint256[] calldata key)external{
-        publicKey[accountNR] = key;
-    }
-
-    function getPublicKey(uint256 accountNR)external view returns(uint256[] memory){
-        return publicKey[accountNR];
-    }
 
     function getLearningRate()external returns(int256){
         return learning_rate;
@@ -323,7 +316,7 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
     }
 
 
-    function checkZKP(uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[201] memory input) public returns(bool) {
+    function checkZKP(uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[209] memory input) public returns(bool) {
         Verifier.Proof memory proof = Verifier.Proof(Pairing.G1Point(a[0],a[1]),Pairing.G2Point(b[0],b[1]),Pairing.G1Point(c[0],c[1]));
         return verifier.verifyTx(proof,input);
     }

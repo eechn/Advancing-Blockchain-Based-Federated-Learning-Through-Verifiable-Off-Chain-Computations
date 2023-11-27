@@ -15,7 +15,15 @@ from Analytics.Analytics import Analytics
 from MessageBroker.Consumer import Consumer
 from MiddleWare.BlockChainClient import BlockChainConnection
 from MiddleWare.NeuralNet import Network, FCLayer, mse_prime, mse
-from utils.utils import read_yaml
+import os, sys
+sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+from Devices.utils.utils import read_yaml
+
+import hashlib, random
+#+++++fix
+from Devices.Edge_Device.Data import Data
+from Devices.Edge_Device.Data import write_args_for_zokrates_cli
+
 
 
 def print_report(device,model,X_test,y_test):
@@ -33,7 +41,6 @@ class FederatedLearningModel:
         self.epochs=self.config["DEFAULT"]["Epochs"]
         self.net.use(mse, mse_prime)
         self.learning_rate=None
-        self.curr_batch=None
         self.batchSize=None
         self.x_train=None
         self.y_train=None
@@ -71,21 +78,16 @@ class FederatedLearningModel:
         x_test=self.scaler.transform(self.x_test.to_numpy())
         return classification_report(self.y_test,self.net.predict(x_test),zero_division=0,output_dict=True)
 
-    def process_Batch(self):
-        self.curr_batch.dropna(inplace=True)
-        batch=self.curr_batch.sample(self.batchSize)
-        self.x_train = batch.drop(columns=self.config["DEFAULT"]["ResponseVariable"])
-        self.y_train = batch[self.config["DEFAULT"]["ResponseVariable"]]
-        self.x_train = self.x_train.to_numpy()
-        self.y_train = self.y_train.to_numpy()
+    def process_Batch(self, x_train, y_train):
+        self.x_train = x_train
+        self.y_train = y_train
         self.scaler.fit(self.x_test.to_numpy())
-        self.x_train=self.scaler.transform(self.x_train)
+        self.x_train = self.scaler.transform(self.x_train)
         self.net.fit(self.x_train, self.y_train, epochs=self.epochs, learning_rate=self.learning_rate)
-        score=self.test_model()
+        score = self.test_model()
         print(f"{self.deviceName}:Score :",score)
 
     def reset_batch(self):
-        self.curr_batch=None
         self.x_train=None
         self.y_train=None
 
@@ -110,11 +112,11 @@ class FederatedLearningModel:
     def set_precision(self,precision):
         self.net.set_precision(precision)
 
-    def add_data_to_current_batch(self,data):
-        if self.curr_batch is None:
-            self.curr_batch = data
-        else:
-            self.curr_batch=pd.concat([self.curr_batch,data])
+    # def add_data_to_current_batch(self,data):
+    #     if self.curr_batch is None:
+    #         self.curr_batch = data
+    #     else:
+    #         self.curr_batch=pd.concat([self.curr_batch,data])
 
 
 
@@ -127,6 +129,7 @@ class MiddleWare:
         self.blockChainConnection=blockchain_connection
         self.deviceName=deviceName
         self.model=FederatedLearningModel(config_file=configFile,deviceName=self.deviceName)
+        self.data = Data(blockchain_connection=blockchain_connection, deviceName=self.deviceName, accountNR=accountNR, configFile=configFile)
         self.config = configFile
         self.consumer = Consumer()
         self.__init_Consumer(deviceName,callback)
@@ -135,10 +138,21 @@ class MiddleWare:
         self.batchSize=None
         self.round=0
 
-    def __generate_Proof(self,w,b,w_new,b_new,x_train,y_train,learning_rate):
-        x_train=x_train*self.precision
-        b_new=b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
+    #+++++fix
+    def _register_data_source_for_data_authenticity(self):
+        self.data.get_vc()
+        self.data.proving()
+        self.data.verification()
+ 
+    def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
+        x_train = x_train * self.precision
+        b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
         x_train = x_train.astype(int)
+        
+        #Get commitment from Blockchain
+        commitment = self.data.get_Commitment()
+
+        
         def args_parser(args):
             res = ""
             for arg in range(len(args)):
@@ -157,49 +171,58 @@ class MiddleWare:
             res = res[:-1]
             return res
 
-        def convert_matrix(m):
-            max_field = 21888242871839275222246405745257275088548364400416034343698204186575808495617
-            m=np.array(m)
-            return np.where(m < 0, max_field + m, m), np.where(m > 0, 0, 1)
 
         zokrates = "zokrates"
-        verification_base=self.config["DEFAULT"]["VerificationBase"]
-        weights, weights_sign = convert_matrix(w)
-        bias, bias_sign = convert_matrix(b)
-        weights_new, _ = convert_matrix(w_new)
-        bias_new, _ = convert_matrix(b_new)
-        x, x_sign = convert_matrix(x_train)
-        args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision,
-                weights_new, bias_new]
+        zok_path = self.config["TEST"]["ZokratesPath"]
+        verification_path = self.config["TEST"]["VerificationBase"]
+        zokrates_path = zok_path + 'root.zok'
+        out_path=zok_path+"out"
+        abi_path = zok_path+"abi.json"
+        witness_path= verification_path + "witness_" + self.deviceName
+        proof_path=verification_path+"proof_" + self.deviceName
+        proving_key_path=zok_path+"proving.key"
+
+        weights, weights_sign = self.data.convert_matrix(w)
+        bias, bias_sign = self.data.convert_matrix(b)
+        weights_new, _ = self.data.convert_matrix(w_new)
+        bias_new, _ = self.data.convert_matrix(b_new)
+        x, x_sign = self.data.convert_matrix(x_train)
+        args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
+        witness_args = args_parser(args).split(" ")
+
+
+        nLeaf, merkleRoot, merkleTree = self.data.auth.get_merkletree_poseidon(x, x_sign, y_train)
+        padding = bytes(32)
+        padded_512_msg = bytes.fromhex(merkleRoot) + padding
+        signature = self.data.auth.get_signature(padded_512_msg)
+        merkle_args = write_args_for_zokrates_cli(self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
+        #merkle_args = write_args_for_zokrates_cli( x, x_sign, y_train, self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
+        witness_args.extend(merkle_args)
 
         
-        out_path=verification_base+"out"
-        abi_path=verification_base+"abi.json"
-        witness_path=verification_base+"witness_"+self.deviceName
-        zokrates_path=self.config["DEFAULT"]["ZokratesPath"]
-        # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
-        # g = subprocess.run(zokrates_compile, capture_output=True)
-        # print(f"{self.accountNR}, {self.deviceName}: zokrates compile in MiddleWare,py", g.stdout.decode(), sep =" ")
+        # #Zokrates file compile
+        # # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
+        # # g = subprocess.run(zokrates_compile, capture_output=True)
 
-
-        zokrates_compute_witness = [zokrates, "compute-witness", "-o",witness_path,'-i',out_path,'-s',abi_path,"-a"]
-        zokrates_compute_witness.extend(args_parser(args).split(" "))
+        # #Witness computation
+        zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
+        zokrates_compute_witness.extend(witness_args)
         g = subprocess.run(zokrates_compute_witness, capture_output=True)
-        print(f"{self.accountNR}, {self.deviceName} zokrates result?")
-        print(g.stdout.decode())
-        
-        proof_path=verification_base+"proof_"+self.deviceName
-        proving_key_path=verification_base+"proving.key"
+
+        # #Proof generation
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
-        #print(f"{self.accountNR}, {self.deviceName} zokrates susccesfully run", g, sep=" ")
+       
+        # with open("./zokrates_input.txt", "w+") as file:
+        #     file.write(" ".join(map(str, witness_args)))
+
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
 
 
     def __init_Consumer(self,DeviceName,callBackFunction):
         queueName = self.config["DEFAULT"]["QueueBase"] + DeviceName
-        on_message_callback = functools.partial(callBackFunction, args=(self.model))
+        on_message_callback = functools.partial(callBackFunction, args=(self.data))
         self.consumer.declare_queue(queueName)
         self.consumer.consume_data(queueName,on_message_callback)
 
@@ -217,59 +240,57 @@ class MiddleWare:
         self.__start_Consuming()
         self.blockChainConnection.init_contract(self.accountNR)
         self.round=self.blockChainConnection.get_RoundNumber(self.accountNR)
-        print(self.round , " in start_Middleware() 1**** ", sep=" ")
-
-        try: 
-            while self.config["DEFAULT"]["Rounds"]>self.round:
-                print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
-                outstanding_update=self.blockChainConnection.roundUpdateOutstanding(self.accountNR)
-                print(f"{self.accountNR}, {self.deviceName} outstanding_update in start_Middleware() MiddleWare.py")
-                self.round = self.blockChainConnection.get_RoundNumber(self.accountNR)
-                print(self.round , f"{self.deviceName} in while clause in start_Middleware() 2 **** ", sep=" ")
-                print(f"{self.accountNR}, {self.deviceName}: Round {self.round} Has update outstanding: ",outstanding_update)
-                if(outstanding_update):
-                    t=time.time()
-                    balance=self.blockChainConnection.get_account_balance(self.accountNR)
-                    global_weights=self.blockChainConnection.get_globalWeights(self.accountNR)
-                    global_bias=self.blockChainConnection.get_globalBias(self.accountNR)
-                    lr=self.blockChainConnection.get_LearningRate(self.accountNR)
-                    self.precision=self.blockChainConnection.get_Precision(self.accountNR)
-                    self.model.set_precision(precision=self.precision)
-                    self.model.set_learning_rate(lr)
-                    self.model.set_weights(global_weights)
-                    self.model.set_bias(global_bias)
-                    self.batchSize=self.blockChainConnection.get_BatchSize(self.accountNR)
-                    while(self.model.curr_batch is None):
-                        pass
-                    while(self.model.curr_batch.size < self.batchSize):
-                        pass
-                    self.model.set_batchSize(self.batchSize)
-                    tt=time.time()
-                    self.model.process_Batch()
-                    print(f"{self.accountNR}, {self.deviceName} after process_Batch() in start_Middleware()")
-                    self.analytics.add_round_training_local_time(self.round,time.time()-tt)
-                    self.analytics.add_round_score(self.round,self.model.test_model())
-                    self.analytics.add_round_classification_report(self.round,self.model.get_classification_report())
-                    w=self.model.get_weights()
-                    b=self.model.get_bias()
-                    if self.config["DEFAULT"]["PerformProof"]:
-                        print("for the perform Proof")
-                        tp=time.time()
-                        self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
-                        #print(f"{self.accountNR}, {self.deviceName} after _generate_Proof() in start_Middleware()")
-                        #print(f"{self.accountNR}, {self.deviceName} generated proof: " , self.proof, sep=" ")
-                        self.analytics.add_round_proof_times(self.round, time.time() - tp)
-                    self.model.reset_batch()
-                    thread=threading.Thread(target=self.update,args=[w,b,self.proof,self.round,balance])
-                    thread.start()
-                    print(f"{self.deviceName}:Round {self.round} update took {time.time()-t} seconds")
-                    print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "th end ******")
-                    self.round+=1
-                    self.analytics.add_round_time(self.round,time.time()-t)
-                time.sleep(self.config["DEFAULT"]["WaitingTime"])
+        print("Round ", self.round , f": {self.deviceName} in start_Middleware() ", sep=" ")
+        self._register_data_source_for_data_authenticity()
+        while self.config["DEFAULT"]["Rounds"]>self.round:
+            print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
+            outstanding_update=self.blockChainConnection.roundUpdateOutstanding(self.accountNR)
+            # print(f"{self.accountNR}, {self.deviceName} outstanding_update in start_Middleware() MiddleWare.py")
+            self.round = self.blockChainConnection.get_RoundNumber(self.accountNR)
+            # print(self.round , f"{self.deviceName} in while clause in start_Middleware() 2 **** ", sep=" ")
+            print(f"{self.accountNR}, {self.deviceName}: Round {self.round} Has update outstanding: ",outstanding_update)
+            if(outstanding_update):
+                t=time.time()
+                balance=self.blockChainConnection.get_account_balance(self.accountNR)
+                global_weights=self.blockChainConnection.get_globalWeights(self.accountNR)
+                global_bias=self.blockChainConnection.get_globalBias(self.accountNR)
+                lr=self.blockChainConnection.get_LearningRate(self.accountNR)
+                self.precision=self.blockChainConnection.get_Precision(self.accountNR)
+                self.model.set_precision(precision=self.precision)
+                self.model.set_learning_rate(lr)
+                self.model.set_weights(global_weights)
+                self.model.set_bias(global_bias)
+                self.batchSize=self.blockChainConnection.get_BatchSize(self.accountNR)
+                while(self.data.curr_batch is None):
+                    pass
+                while(self.data.curr_batch.size < self.batchSize):
+                    pass
+                self.data.set_batchSize(self.batchSize)
+                x_train, y_train = self.data.generate_batch()
+                tt = time.time()
+                try:
+                    self.model.process_Batch(x_train, y_train)
+                except Exception as e:
+                    print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "error; ", e)
+                self.analytics.add_round_training_local_time(self.round,time.time()-tt)
+                self.analytics.add_round_score(self.round,self.model.test_model())
+                self.analytics.add_round_classification_report(self.round,self.model.get_classification_report())
+                w = self.model.get_weights()
+                b = self.model.get_bias()
+                if self.config["DEFAULT"]["PerformProof"]:
+                    tp = time.time()
+                    self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
+                    #print(f"{self.accountNR}, {self.deviceName} generated proof: " , self.proof, sep=" ")
+                    self.analytics.add_round_proof_times(self.round, time.time() - tp)
+                self.model.reset_batch()
+                thread=threading.Thread(target=self.update,args=[w,b, self.proof, self.round, balance])
+                thread.start()
+                print(f"{self.deviceName}:Round {self.round} update took {time.time()-t} seconds")
+                print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "th end ******")
+                self.round+=1
+                self.analytics.add_round_time(self.round,time.time()-t)
+            time.sleep(self.config["DEFAULT"]["WaitingTime"])
                 #self.__sleep_call(10)
-        except Exception as e:
-            print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "error; ", e)
         self.analytics.write_data()
 
     def __sleep_call(self, t):
@@ -281,11 +302,10 @@ class MiddleWare:
         #print()
         #print(f"{self.deviceName}:Checking for new update =>")
 
-def callback(ch, method, properties, body,args):
-    model=args
-    if isinstance(model,FederatedLearningModel):
+def callback(ch, method, properties, body, args):
+    data=args
+    if isinstance(data, Data):
         batch=pd.read_csv(io.BytesIO(body),header=0,index_col=0)
-        print("*** checkpoint  3 callback() in MiddleWare.py batch: ", batch, "\n")
-        model.add_data_to_current_batch(batch)
+        data.add_data_to_current_batch(batch)
 
 

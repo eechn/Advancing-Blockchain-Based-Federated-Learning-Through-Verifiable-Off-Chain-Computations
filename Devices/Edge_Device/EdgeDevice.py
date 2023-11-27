@@ -16,6 +16,7 @@ class EdgeDevice:
         self.data=None
         self.init_dataset()
 
+
     def init_dataset(self):
         self.data = pd.read_csv(
             self.datasource, names=

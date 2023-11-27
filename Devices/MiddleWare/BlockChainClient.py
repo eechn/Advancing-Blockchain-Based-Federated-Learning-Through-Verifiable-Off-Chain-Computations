@@ -15,14 +15,22 @@ class BlockChainConnection:
         self.FLcontractABI=None
         self.FLcontractDeployed=None
         self.FLcontractAddress=self.config["DEFAULT"]["FLContractAddress"]
+        self.RcontractABI=None
+        self.RcontractDeployed=None
+        self.RegisterContractAddress=self.config["DEFAULT"]["RegisterContractAddress"]
         self.lock_newRound=threading.Lock()
         self.precision=None
 
     def connect(self):
         self.web3Connection=Web3(Web3.HTTPProvider(self.config["DEFAULT"]["EtheriumRPCServer"],request_kwargs={'timeout': 60*10}))
+        #FL contract deployment
         with open(self.config["DEFAULT"]["FLContractABIPAth"]) as f:
             self.FLcontractABI=json.load(f)["abi"]
         self.FLcontractDeployed=self.web3Connection.eth.contract(address=self.FLcontractAddress,abi=self.FLcontractABI)
+        #Registration contract deployment
+        with open(self.config["DEFAULT"]["RContractABIPAth"]) as f:
+            self.RcontractABI=json.load(f)["abi"]
+        self.RcontractDeployed=self.web3Connection.eth.contract(address=self.RegisterContractAddress,abi=self.RcontractABI)
 
     def init_contract(self,accountNR):
         if self.is_connected() and accountNR == 0:
@@ -37,8 +45,10 @@ class BlockChainConnection:
             self.__await_Trainsaction(thxHash)
             thxHash = self.FLcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
             self.__await_Trainsaction(thxHash)
+            thxHash = self.RcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["RegisterVerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            self.__await_Trainsaction(thxHash)
 
-    def __check_ZKP(self, proof, accountNR):
+    def __check_ZKP(self, proof):
         a=proof['proof']['a']
         a=[Web3.to_int(hexstr=x) for x in a]
         b=proof['proof']['b']
@@ -122,7 +132,7 @@ class BlockChainConnection:
 
     def __update_with_proof(self,weights,bias,accountNR,proof):
         try:
-            a,b,c,inputs=self.__check_ZKP(proof,accountNR)
+            a,b,c,inputs=self.__check_ZKP(proof)
             weights = [[int(x) for x in y] for y in weights]
             bias = [int(x) for x in bias]
             thxHash = self.FLcontractDeployed.functions.update_with_proof(weights, bias,a,b,c,inputs).transact(
@@ -178,11 +188,17 @@ class BlockChainConnection:
         self.precision = self.__get_Precision(accountNR)
         return self.precision
 
-    def set_PublicKey(self, accountNR, pubkey):
-        return  self.FLcontractDeployed.functions.setPublicKey(accountNR, pubkey).transact({"from":self.web3Connection.eth.accounts[accountNR]})
+    def verify_Registration(self, accountNR, commitment, proof):
+        a,b,c,inputs=self.__check_ZKP(proof)
+        thxHash = self.RcontractDeployed.functions.verification(accountNR, commitment, a,b,c,inputs).transact(
+            {"from": self.web3Connection.eth.accounts[accountNR]})
+        self.__await_Trainsaction(thxHash)
+        
+    def setCommitment(self, accountNR, dc):
+        return  self.RcontractDeployed.functions.setCommitment(accountNR, dc).transact({"from":self.web3Connection.eth.accounts[accountNR]})
 
-    def get_PublicKey(self, accountNR):
-        return  self.FLcontractDeployed.functions.getPublicKey(accountNR).call({"from":self.web3Connection.eth.accounts[accountNR]})
+    def getCommitment(self, accountNR):
+        return  self.RcontractDeployed.functions.getCommitment(accountNR).call({"from":self.web3Connection.eth.accounts[accountNR]})
 
 
 
