@@ -13,9 +13,10 @@ import subprocess, json
 
 class Encryption:
 
-	def __init__(self):
+	def __init__(self, deviceName):
 		self.sk = None
 		self.pk = None
+		self.deviceName = deviceName
 
 
 	def generate_key_pair(self):
@@ -69,20 +70,20 @@ class Encryption:
 			return res
 
 		#For generating leaves
-		base_path = "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/"
+		base_path = "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/"
 		if len(data) == 6:
 			out_path = base_path + "poseidon/poseidon_leaf"
 			abi_path = base_path + "poseidon/leaf.json"
-			witness_path = base_path + "poseidon/leaf_witness"
-			proof_path = base_path + "poseidon/leaf_proof"
+			witness_path = base_path + "poseidon/leaf_witness_" + self.deviceName
+			proof_path = base_path + "poseidon/leaf_proof_" + self.deviceName
 			proving_key_path = base_path + "poseidon/leaf_proving.key"
 			witness_args = args_parser(data).split(" ")
 			
 		elif len(data) == 2: 
 			out_path = base_path + "poseidon/poseidon_tree"
 			abi_path = base_path + "poseidon/tree.json"
-			witness_path = base_path + "poseidon/tree_witness"
-			proof_path = base_path + "poseidon/tree_proof"
+			witness_path = base_path + "poseidon/tree_witness_" + self.deviceName
+			proof_path = base_path + "poseidon/tree_proof_" + self.deviceName
 			proving_key_path = base_path + "poseidon/tree_proving.key"
 			witness_args = args_parser([int(data[0],16), int(data[1],16)]).split(" ")
 		else:
@@ -92,6 +93,7 @@ class Encryption:
 		zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
 		zokrates_compute_witness.extend(witness_args)
 		g = subprocess.run(zokrates_compute_witness, capture_output=True)
+
 		zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
 		g = subprocess.run(zokrates_generate_proof, capture_output=True)
 

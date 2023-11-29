@@ -6,8 +6,8 @@ DEFAULT:
   QueueBase: "Queue"
   InputDimension: 9
   OutputDimension: 6
-  #NumberOfParticipants: 6
-  NumberOfParticipants: 1
+  NumberOfParticipants: 5
+  #NumberOfParticipants: 1
   Epochs : 1
   LearningRate: 1000
   Precision: 10000
@@ -28,10 +28,10 @@ DEFAULT:
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0x5856458dfB54fC0a1133A98bE83ccaA7D52ECED9"  
-  VerifierContractAddress: "0x061e562A4cc9C6B574dEE8CD2f47De6661F1d13e"
-  RegisterContractAddress: "0x14Bf2932CB83dc414AF81Ebe610612b8e9337249"  
-  RegisterVerifierContractAddress: "0x4E3E5e06818ea43b55071bC8C151625E63340D13"
+  FLContractAddress: "0x2A01661Ab6dE384496b515174B3642416a7a55e4"  
+  VerifierContractAddress: "0x11b0ac99Ae3EEB91A3edc4c025A4088a58674ED2"
+  RegisterContractAddress: "0xaBad4A04171F0E1CD96833811E41581b55245257"  
+  RegisterVerifierContractAddress: "0x1CfC7888a5f7601258bcEE1a7Ff281c8E231f8F0"
   ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
   VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
   FLContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"

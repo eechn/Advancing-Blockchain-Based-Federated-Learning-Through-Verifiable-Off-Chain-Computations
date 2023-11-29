@@ -18,7 +18,7 @@ class Data:
         self.config = configFile
         self.batchSize = None
         self.blockChainConnection=blockchain_connection
-        self.auth = Encryption()
+        self.auth = Encryption(deviceName)
         self._init_for_data_authenticity()
         self.vc = None
         self.proof = None

@@ -140,17 +140,23 @@ class MiddleWare:
 
     #+++++fix
     def _register_data_source_for_data_authenticity(self):
+        print(f"{self.accountNR}, {self.deviceName}, regstration start")
         self.data.get_vc()
         self.data.proving()
         self.data.verification()
+        print(f"{self.accountNR}, {self.deviceName}, regstration start")
+        
  
     def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
+        print(f"{self.accountNR}, {self.deviceName}, proof generation start")
+        
         x_train = x_train * self.precision
         b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
         x_train = x_train.astype(int)
         
         #Get commitment from Blockchain
         commitment = self.data.get_Commitment()
+        #print(f"{self.deviceName}'s commitment: {commitment}")
 
         
         def args_parser(args):
@@ -190,31 +196,39 @@ class MiddleWare:
         args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
         witness_args = args_parser(args).split(" ")
 
-
+        print(f"{self.accountNR}, {self.deviceName}, merkleTree generation start")
+        
         nLeaf, merkleRoot, merkleTree = self.data.auth.get_merkletree_poseidon(x, x_sign, y_train)
+        #print(f"{self.deviceName}'s merkleRoot: {merkleRoot}")
         padding = bytes(32)
         padded_512_msg = bytes.fromhex(merkleRoot) + padding
         signature = self.data.auth.get_signature(padded_512_msg)
         merkle_args = write_args_for_zokrates_cli(self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
         #merkle_args = write_args_for_zokrates_cli( x, x_sign, y_train, self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
         witness_args.extend(merkle_args)
+        print(f"{self.accountNR}, {self.deviceName}, signature generation end")
 
-        
-        # #Zokrates file compile
-        # # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
-        # # g = subprocess.run(zokrates_compile, capture_output=True)
 
+        with open("./zokrates_input.txt", "w+") as file:
+            file.write(" ".join(map(str, witness_args)))
+
+
+        #Zokrates file compile
+        # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
+        # g = subprocess.run(zokrates_compile, capture_output=True)
+
+        print(f"{self.accountNR}, {self.deviceName}, witness generation start")
         # #Witness computation
         zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
         zokrates_compute_witness.extend(witness_args)
         g = subprocess.run(zokrates_compute_witness, capture_output=True)
-
+        
+        print(f"{self.accountNR}, {self.deviceName}, proof generation start")
         # #Proof generation
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
-       
-        # with open("./zokrates_input.txt", "w+") as file:
-        #     file.write(" ".join(map(str, witness_args)))
+
+        print(f"{self.accountNR}, {self.deviceName}, proof generation end ")
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
@@ -234,7 +248,7 @@ class MiddleWare:
         tu = time.time()
         self.blockChainConnection.update(w, b, self.accountNR, p)
         self.analytics.add_round_update_blockchain_time(r, time.time() - tu)
-        self.analytics.add_round_gas(self.round,balance - self.blockChainConnection.get_account_balance(self.accountNR))
+        self.analytics.add_round_gas(self.round, balance - self.blockChainConnection.get_account_balance(self.accountNR))
 
     def start_Middleware(self):
         self.__start_Consuming()
