@@ -42,8 +42,8 @@ def whole_merge():
    df=df.sample(frac=1)
    train=df.iloc[:int(0.9*len(df))]
    test=df.iloc[int(0.9*len(df)):]
-   train.to_csv("/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data/train.txt",index=False,header=False)
-   test.to_csv("/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data/test.txt",index=False,header=False)
+   train.to_csv("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/train.txt",index=False,header=False)
+   test.to_csv("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt",index=False,header=False)
 
 def divide_participants():
    p = {
@@ -66,7 +66,7 @@ def divide_participants():
                      temp.append(g)
                data=temp
                p[participant].extend(data)
-   with open("/home/nikolas/MEGA/Workplace/Informatik/Masterarbeit/Implementation/PythonProject/MasterThesis_SoftwareEngineering/Devices/Edge_Device/data/test_file.txt",
+   with open("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test_file.txt",
              "w") as t:
       for i in range(1,9):
          device="Device_"+str(i)
@@ -92,5 +92,5 @@ def divide_participants():
 
 
 if __name__ == '__main__': 
-   whole_merge()
+   #whole_merge()
    divide_participants()

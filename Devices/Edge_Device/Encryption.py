@@ -1,6 +1,6 @@
 import hashlib
 import sys, os
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 
 from pycrypto.zokrates_pycrypto.eddsa import PrivateKey, PublicKey
 from pycrypto.zokrates_pycrypto.utils import write_signature_for_zokrates_cli
@@ -70,7 +70,7 @@ class Encryption:
 			return res
 
 		#For generating leaves
-		base_path = "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/"
+		base_path = "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/"
 		if len(data) == 6:
 			out_path = base_path + "poseidon/poseidon_leaf"
 			abi_path = base_path + "poseidon/leaf.json"
@@ -93,7 +93,6 @@ class Encryption:
 		zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
 		zokrates_compute_witness.extend(witness_args)
 		g = subprocess.run(zokrates_compute_witness, capture_output=True)
-
 		zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
 		g = subprocess.run(zokrates_generate_proof, capture_output=True)
 

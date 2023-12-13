@@ -1,7 +1,10 @@
 from flask import Flask, abort
 import os
 import json
-from zokrates_pycrypto.eddsa import PrivateKey, PublicKey
+import sys
+sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+
+from pycrypto.zokrates_pycrypto.eddsa import PrivateKey, PublicKey
 import hashlib
 
 

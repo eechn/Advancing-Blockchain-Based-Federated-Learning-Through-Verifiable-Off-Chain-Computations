@@ -4,7 +4,7 @@ import time
 import numpy as np
 from web3 import Web3
 import sys, os
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 from Devices.utils.utils import read_yaml
 import json
 
@@ -123,7 +123,6 @@ class BlockChainConnection:
         if newround_refreshed and (not newround):
             print(f"AccountNr = {accountNR}: Round is finished starting new round =>")
             self.lock_newRound.release()
-            print(f"AccountNr = {accountNR}:return newround_refresehd in roundUpdateOutstanding() in BlockChainConnection.py " ,  newround_refreshed, sep=" ")
             return newround_refreshed
         else:
             self.lock_newRound.release()

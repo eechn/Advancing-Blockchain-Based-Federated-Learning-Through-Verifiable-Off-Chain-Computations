@@ -16,7 +16,7 @@ from MessageBroker.Consumer import Consumer
 from MiddleWare.BlockChainClient import BlockChainConnection
 from MiddleWare.NeuralNet import Network, FCLayer, mse_prime, mse
 import os, sys
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 from Devices.utils.utils import read_yaml
 
 import hashlib, random
@@ -140,15 +140,12 @@ class MiddleWare:
 
     #+++++fix
     def _register_data_source_for_data_authenticity(self):
-        print(f"{self.accountNR}, {self.deviceName}, regstration start")
         self.data.get_vc()
         self.data.proving()
         self.data.verification()
-        print(f"{self.accountNR}, {self.deviceName}, regstration start")
         
  
     def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
-        print(f"{self.accountNR}, {self.deviceName}, proof generation start")
         
         x_train = x_train * self.precision
         b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
@@ -156,7 +153,6 @@ class MiddleWare:
         
         #Get commitment from Blockchain
         commitment = self.data.get_Commitment()
-        #print(f"{self.deviceName}'s commitment: {commitment}")
 
         
         def args_parser(args):
@@ -196,7 +192,6 @@ class MiddleWare:
         args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
         witness_args = args_parser(args).split(" ")
 
-        print(f"{self.accountNR}, {self.deviceName}, merkleTree generation start")
         
         nLeaf, merkleRoot, merkleTree = self.data.auth.get_merkletree_poseidon(x, x_sign, y_train)
         #print(f"{self.deviceName}'s merkleRoot: {merkleRoot}")
@@ -206,7 +201,6 @@ class MiddleWare:
         merkle_args = write_args_for_zokrates_cli(self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
         #merkle_args = write_args_for_zokrates_cli( x, x_sign, y_train, self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
         witness_args.extend(merkle_args)
-        print(f"{self.accountNR}, {self.deviceName}, signature generation end")
 
 
         with open("./zokrates_input.txt", "w+") as file:
@@ -217,18 +211,21 @@ class MiddleWare:
         # zokrates_compile = [zokrates, "compile", '-i', zokrates_path, '-o',out_path,'-s', abi_path]
         # g = subprocess.run(zokrates_compile, capture_output=True)
 
-        print(f"{self.accountNR}, {self.deviceName}, witness generation start")
         # #Witness computation
+        tt = time.time()
         zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
         zokrates_compute_witness.extend(witness_args)
         g = subprocess.run(zokrates_compute_witness, capture_output=True)
+        self.analytics.add_round_witness_time(self.round,time.time()-tt)
+        self.analytics.add_round_witness_size(self.round,os.path.getsize(witness_path))
         
-        print(f"{self.accountNR}, {self.deviceName}, proof generation start")
         # #Proof generation
+        tt = time.time()
         zokrates_generate_proof = [zokrates, "generate-proof",'-w',witness_path,'-p',proving_key_path,'-i',out_path,'-j',proof_path]
         g = subprocess.run(zokrates_generate_proof, capture_output=True)
+        self.analytics.add_round_proof_time(self.round,time.time()-tt)
+        self.analytics.add_round_proof_size(self.round,os.path.getsize(proof_path))
 
-        print(f"{self.accountNR}, {self.deviceName}, proof generation end ")
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
@@ -254,7 +251,6 @@ class MiddleWare:
         self.__start_Consuming()
         self.blockChainConnection.init_contract(self.accountNR)
         self.round=self.blockChainConnection.get_RoundNumber(self.accountNR)
-        print("Round ", self.round , f": {self.deviceName} in start_Middleware() ", sep=" ")
         self._register_data_source_for_data_authenticity()
         while self.config["DEFAULT"]["Rounds"]>self.round:
             print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
@@ -262,7 +258,6 @@ class MiddleWare:
             # print(f"{self.accountNR}, {self.deviceName} outstanding_update in start_Middleware() MiddleWare.py")
             self.round = self.blockChainConnection.get_RoundNumber(self.accountNR)
             # print(self.round , f"{self.deviceName} in while clause in start_Middleware() 2 **** ", sep=" ")
-            print(f"{self.accountNR}, {self.deviceName}: Round {self.round} Has update outstanding: ",outstanding_update)
             if(outstanding_update):
                 t=time.time()
                 balance=self.blockChainConnection.get_account_balance(self.accountNR)
@@ -300,7 +295,6 @@ class MiddleWare:
                 thread=threading.Thread(target=self.update,args=[w,b, self.proof, self.round, balance])
                 thread.start()
                 print(f"{self.deviceName}:Round {self.round} update took {time.time()-t} seconds")
-                print(f"{self.accountNR}, {self.deviceName}, round: ", self.round, "th end ******")
                 self.round+=1
                 self.analytics.add_round_time(self.round,time.time()-t)
             time.sleep(self.config["DEFAULT"]["WaitingTime"])

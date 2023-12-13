@@ -1,23 +1,20 @@
 DEFAULT:
-  DeviceDataPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
+  DeviceDataPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
   IntervalDataGenerator: 1
   NumberOfSamplesGenerated: 50
   MessageBrokerHost: "localhost"
   QueueBase: "Queue"
   InputDimension: 9
   OutputDimension: 6
-  NumberOfParticipants: 5
-  #NumberOfParticipants: 1
+  NumberOfParticipants: 1
   Epochs : 1
   LearningRate: 1000
   Precision: 10000
   WaitingTime: 2
-  #BatchSize: 40
   BatchSize: 10
-  #Rounds : 300
-  Rounds : 30
-  TestFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt"
-  TrainFilePath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
+  Rounds : 300
+  TestFilePath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt"
+  TrainFilePath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
   IntervalTime: 40
   PercentOfDataGenerated: 0.0086
   #PerformProof: False
@@ -28,15 +25,15 @@ DEFAULT:
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0x2A01661Ab6dE384496b515174B3642416a7a55e4"  
-  VerifierContractAddress: "0x11b0ac99Ae3EEB91A3edc4c025A4088a58674ED2"
-  RegisterContractAddress: "0xaBad4A04171F0E1CD96833811E41581b55245257"  
-  RegisterVerifierContractAddress: "0x1CfC7888a5f7601258bcEE1a7Ff281c8E231f8F0"
-  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
-  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
-  FLContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"
-  RContractABIPAth: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/Registration.json"
-  AnalyticsOutBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/MiddleWare/Analytics/"
+  FLContractAddress: "0xf1d120C423D3483bD56CaE0Fe3c5563c0144079E"  
+  VerifierContractAddress: "0xE6eEBE456cdB7a52c1BaEc0c80b6dE5601f48a65"
+  RegisterContractAddress: "0x5f4B7B55d1Dc9E795A463144331aBd448937aED4"  
+  RegisterVerifierContractAddress: "0x09C7CE03Ed7369aC7b7844FeA2426376679F2446"
+  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
+  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
+  FLContractABIPAth: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"
+  RContractABIPAth: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/Registration.json"
+  AnalyticsOutBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/MiddleWare/Analytics/"
   Activities : [5, 11, 12, 14, 15, 17]
   ActivitiesEncoded : [1,2,3,4,5,6]
   ActivityMappings:
@@ -57,10 +54,10 @@ DEFAULT:
     17: 6
 
 TEST:
-  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/"
-  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Authentication/Verification/SAVED_VERIFYER_10/"
+  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/"
+  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
 
 Registration:
-  ZokratesPath: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates/"
-  VerificationBase: "/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates"
+  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates/"
+  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates"
   

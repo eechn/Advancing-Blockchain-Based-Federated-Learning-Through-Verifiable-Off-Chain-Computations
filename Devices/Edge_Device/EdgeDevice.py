@@ -2,7 +2,7 @@ import os, sys
 import pandas as pd
 import time
 from MessageBroker.Publisher import Publisher
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
 from Devices.utils.utils import read_yaml
 
 

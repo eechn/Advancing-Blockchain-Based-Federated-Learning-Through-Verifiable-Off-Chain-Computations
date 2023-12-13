@@ -17,6 +17,10 @@ class Analytics:
         self.round_update_blockchain_time=pd.DataFrame()
         self.round_score=pd.DataFrame()
         self.round_classification_report=pd.DataFrame()
+        self.round_witness_time=pd.DataFrame()
+        self.round_proof_time=pd.DataFrame()
+        self.round_witness_size=pd.DataFrame()
+        self.round_proof_size=pd.DataFrame()
 
 
     def add_round_time(self,round,time):
@@ -50,6 +54,22 @@ class Analytics:
             dic[target] = report[str(target)]['precision']
         df = pd.DataFrame([dic])
         self.round_classification_report = pd.concat([self.round_classification_report, df])
+    
+    def add_round_witness_time(self, round, time):
+        df=pd.DataFrame([{'Round-Number':round,'Time-Taken':time}])
+        self.round_witness_time=pd.concat([self.round_witness_time,df])
+
+    def add_round_proof_time(self, round, time):
+        df=pd.DataFrame([{'Round-Number':round,'Time-Taken':time}])
+        self.round_proof_time=pd.concat([self.round_proof_time,df])
+
+    def add_round_witness_size(self, round, size):
+        df=pd.DataFrame([{'Round-Number':round,'Size':size}])
+        self.round_witness_size=pd.concat([self.round_witness_size,df])
+
+    def add_round_proof_size(self, round, size):
+        df=pd.DataFrame([{'Round-Number':round,'Size':size}])
+        self.round_proof_size=pd.concat([self.round_proof_size,df])
 
     def write_data(self):
         base_path=self.config["DEFAULT"]["AnalyticsOutBase"]
@@ -63,4 +83,8 @@ class Analytics:
         self.round_score.to_csv(path_or_buf=os.path.join(path,"Round_Score"))
         self.round_classification_report.to_csv(path_or_buf=os.path.join(path,"Round_Classification_Report"))
         self.round_update_blockchain_time.to_csv(path_or_buf=os.path.join(path,"Round_Update_Blockchain_Time"))
+        self.round_witness_time.to_csv(path_or_buf=os.path.join(path,"Round_Witness_Time"))
+        self.round_proof_time.to_csv(path_or_buf=os.path.join(path,"Round_Proof_Time"))
+        self.round_witness_size.to_csv(path_or_buf=os.path.join(path,"Round_Witness_Size"))
+        self.round_proof_size.to_csv(path_or_buf=os.path.join(path,"Round_Proof_Size"))
         print(f"Values written for device : {self.deviceName}")
