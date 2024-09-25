@@ -4,7 +4,8 @@ import time
 import numpy as np
 from web3 import Web3
 import sys, os
-sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 import json
 
@@ -23,11 +24,11 @@ class BlockChainConnection:
 
     def connect(self):
         self.web3Connection=Web3(Web3.HTTPProvider(self.config["DEFAULT"]["EtheriumRPCServer"],request_kwargs={'timeout': 60*10}))
-        #FL contract deployment
+        #FL contract 
         with open(self.config["DEFAULT"]["FLContractABIPAth"]) as f:
             self.FLcontractABI=json.load(f)["abi"]
         self.FLcontractDeployed=self.web3Connection.eth.contract(address=self.FLcontractAddress,abi=self.FLcontractABI)
-        #Registration contract deployment
+        #Registration contract 
         with open(self.config["DEFAULT"]["RContractABIPAth"]) as f:
             self.RcontractABI=json.load(f)["abi"]
         self.RcontractDeployed=self.web3Connection.eth.contract(address=self.RegisterContractAddress,abi=self.RcontractABI)
@@ -188,10 +189,16 @@ class BlockChainConnection:
         return self.precision
 
     def verify_Registration(self, accountNR, commitment, proof):
-        a,b,c,inputs=self.__check_ZKP(proof)
-        thxHash = self.RcontractDeployed.functions.verification(accountNR, commitment, a,b,c,inputs).transact(
-            {"from": self.web3Connection.eth.accounts[accountNR]})
-        self.__await_Trainsaction(thxHash)
+        try:
+            a,b,c,inputs=self.__check_ZKP(proof)
+            print(a,b,c, inputs)
+            thxHash = self.RcontractDeployed.functions.verification(accountNR, commitment, a,b,c,inputs).transact(
+                {"from": self.web3Connection.eth.accounts[accountNR]})
+            self.__await_Trainsaction(thxHash)
+        except Exception as e:
+            print("Blockchain Client")
+            print(e)
+
         
     def setCommitment(self, accountNR, dc):
         return  self.RcontractDeployed.functions.setCommitment(accountNR, dc).transact({"from":self.web3Connection.eth.accounts[accountNR]})

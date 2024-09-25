@@ -2,7 +2,8 @@ import os.path, sys
 
 import pandas as pd
 
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 
 

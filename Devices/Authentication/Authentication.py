@@ -16,7 +16,8 @@ from MessageBroker.Consumer import Consumer
 from MiddleWare.BlockChainClient import BlockChainConnection
 from MiddleWare.NeuralNet import Network, FCLayer, mse_prime, mse
 import os, sys
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices")
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 
 import hashlib, random

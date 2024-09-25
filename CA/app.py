@@ -2,7 +2,7 @@ from flask import Flask, abort
 import os
 import json
 import sys
-sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices")
 
 from pycrypto.zokrates_pycrypto.eddsa import PrivateKey, PublicKey
 import hashlib
@@ -44,4 +44,8 @@ def get_vc(pubKey_x, pubKey_y):
             "vc": output
     }
     
+if __name__ == "__main__":
+    app.run(host = "0.0.0.0", debug = True)
+
+
 

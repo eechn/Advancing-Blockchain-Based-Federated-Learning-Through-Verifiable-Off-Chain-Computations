@@ -1,5 +1,5 @@
 DEFAULT:
-  DeviceDataPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
+  DeviceDataPath: "/home/block/thesis_CHLEE/data"
   IntervalDataGenerator: 1
   NumberOfSamplesGenerated: 50
   MessageBrokerHost: "localhost"
@@ -13,8 +13,8 @@ DEFAULT:
   WaitingTime: 2
   BatchSize: 10
   Rounds : 300
-  TestFilePath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data/test.txt"
-  TrainFilePath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/Edge_Device/data"
+  TestFilePath: "/home/block/thesis_CHLEE/data/test.txt"
+  TrainFilePath: "/home/block/thesis_CHLEE/data"
   IntervalTime: 40
   PercentOfDataGenerated: 0.0086
   #PerformProof: False
@@ -24,16 +24,16 @@ DEFAULT:
   #Gas: 1000000000000
 
   ResponseVariable: "Activity"
-  EtheriumRPCServer: "http://127.0.0.1:8545"
-  FLContractAddress: "0xf1d120C423D3483bD56CaE0Fe3c5563c0144079E"  
-  VerifierContractAddress: "0xE6eEBE456cdB7a52c1BaEc0c80b6dE5601f48a65"
-  RegisterContractAddress: "0x5f4B7B55d1Dc9E795A463144331aBd448937aED4"  
-  RegisterVerifierContractAddress: "0x09C7CE03Ed7369aC7b7844FeA2426376679F2446"
-  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok"
-  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
-  FLContractABIPAth: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/FederatedModel.json"
-  RContractABIPAth: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Blockchain/Truffle/build/contracts/Registration.json"
-  AnalyticsOutBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Devices/MiddleWare/Analytics/"
+  EtheriumRPCServer: "http://141.223.163.119:8545"
+  FLContractAddress: "0xEa9f8A1f91d90E1EC9B5FCe9c7340a3BD2DA5D3F"  
+  VerifierContractAddress: "0x56Dc8e8Da72935D9d46c08e0BA207C883AfE1C34"
+  RegisterContractAddress: "0xc762502b30019905F01c557b99E17083F8A07D9F"  
+  RegisterVerifierContractAddress: "0x2FDc62F33Fd555d49d313718Ea3D45D0cBF805Ad"
+  ZokratesPath: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/ZoKrates/root.zok"
+  VerificationBase: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/SAVED_VERIFYER_10/"
+  FLContractABIPAth: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Blockchain/Truffle/build/contracts/FederatedModel.json"
+  RContractABIPAth: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Blockchain/Truffle/build/contracts/Registration.json"
+  AnalyticsOutBase: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices/MiddleWare/Analytics/"
   Activities : [5, 11, 12, 14, 15, 17]
   ActivitiesEncoded : [1,2,3,4,5,6]
   ActivityMappings:
@@ -54,10 +54,10 @@ DEFAULT:
     17: 6
 
 TEST:
-  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/"
-  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/SAVED_VERIFYER_10/"
+  ZokratesPath: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/ZoKrates/"
+  VerificationBase: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/SAVED_VERIFYER_10/"
 
 Registration:
-  ZokratesPath: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates/"
-  VerificationBase: "/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CA/Zokrates"
+  ZokratesPath: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CA/Zokrates/"
+  VerificationBase: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CA/Zokrates"
   

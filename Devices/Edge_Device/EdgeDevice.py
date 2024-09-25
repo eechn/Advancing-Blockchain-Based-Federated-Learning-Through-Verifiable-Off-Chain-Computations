@@ -2,7 +2,8 @@ import os, sys
 import pandas as pd
 import time
 from MessageBroker.Publisher import Publisher
-sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 
 

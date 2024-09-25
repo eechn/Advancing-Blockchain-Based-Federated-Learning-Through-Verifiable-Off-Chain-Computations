@@ -16,7 +16,8 @@ from MessageBroker.Consumer import Consumer
 from MiddleWare.BlockChainClient import BlockChainConnection
 from MiddleWare.NeuralNet import Network, FCLayer, mse_prime, mse
 import os, sys
-sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 
 import hashlib, random
@@ -142,7 +143,12 @@ class MiddleWare:
     def _register_data_source_for_data_authenticity(self):
         self.data.get_vc()
         self.data.proving()
-        self.data.verification()
+        try:
+            self.data.verification()
+        except Exception as e:
+            print("middleware")
+            print(e)
+        print(self.data.get_Commitment())
         
  
     def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
@@ -212,12 +218,17 @@ class MiddleWare:
         # g = subprocess.run(zokrates_compile, capture_output=True)
 
         # #Witness computation
-        tt = time.time()
-        zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
-        zokrates_compute_witness.extend(witness_args)
-        g = subprocess.run(zokrates_compute_witness, capture_output=True)
-        self.analytics.add_round_witness_time(self.round,time.time()-tt)
-        self.analytics.add_round_witness_size(self.round,os.path.getsize(witness_path))
+        try:
+            tt = time.time()
+            zokrates_compute_witness = [zokrates, "compute-witness", "-o", witness_path, '-i',out_path,'-s', abi_path, '-a']
+            zokrates_compute_witness.extend(witness_args)
+            g = subprocess.run(zokrates_compute_witness, capture_output=True)
+            self.analytics.add_round_witness_time(self.round,time.time()-tt)
+            self.analytics.add_round_witness_size(self.round,os.path.getsize(witness_path))
+        except Exception as e:
+            print("Witness computation failed")
+            print(e)
+
         
         # #Proof generation
         tt = time.time()

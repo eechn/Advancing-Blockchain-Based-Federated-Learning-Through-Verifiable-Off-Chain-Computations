@@ -1,6 +1,7 @@
 import os, sys
-sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
-
+#sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.Edge_Device.Encryption import Encryption
 import numpy as np
 import pandas as pd
@@ -56,7 +57,8 @@ class Data:
     def get_vc(self):
         pk_x = self.auth.pk.p.x.n
         pk_y = self.auth.pk.p.y.n
-        url = "http://127.0.0.1:5000/vc/" + str(pk_x) + "/" + str(pk_y)
+        url = "http://141.223.163.119:5000/vc/" + str(pk_x) + "/" + str(pk_y)
+        print("*****get vc")
 
         response = requests.get(url=url)
         self.vc = response.json()

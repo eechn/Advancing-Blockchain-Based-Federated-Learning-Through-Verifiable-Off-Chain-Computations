@@ -2,8 +2,9 @@ import sys
 import threading
 import time
 from MiddleWare.BlockChainClient import BlockChainConnection
-# import sys, os
-sys.path.append("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
+#import sys, os
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 from Edge_Device.EdgeDevice import EdgeDevice
 #+++++fix
@@ -19,7 +20,7 @@ def start_Device(deviceName,accountNr,blockchain_connection,config_file):
 
 
 if __name__ == '__main__':
-    config_file = read_yaml("/home/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/CONFIG.yaml")
+    config_file = read_yaml("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CONFIG.yaml")
     blockchain_connection=BlockChainConnection(config_file=config_file)
     blockchain_connection.connect()
     for i in range(config_file["DEFAULT"]["NumberOfParticipants"]):

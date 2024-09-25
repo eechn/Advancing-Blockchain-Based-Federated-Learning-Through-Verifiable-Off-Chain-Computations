@@ -34,7 +34,7 @@ zokrates="zokrates"
 batchsize=10
 
 t1=time.time()
-zokrates_compile=[zokrates,"compile","-i","/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations/Verification/ZoKrates/root.zok",'--allow-unconstrained-variables']
+zokrates_compile=[zokrates,"compile","-i","/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/ZoKrates/root.zok",'--allow-unconstrained-variables']
 g= subprocess.run(zokrates_compile, capture_output=True)
 print("compile result ", g.stdout.decode(), sep = " ")
 t2=time.time()
