@@ -31,7 +31,9 @@ contract FederatedModel{
     uint256 private intervalEnd;
     uint256 private updateInterval;
     uint256 private batchSize;
-    Verifier private verifier;
+    //Modi
+    //Verifier private verifier;
+    Verifier[4] private verifier;
     bool private initialized = false;
     //uint256 [][] private publicKey;
     mapping (uint => uint256[]) private publicKey;
@@ -50,8 +52,12 @@ contract FederatedModel{
     }
 
 
-    function updateVerifier(address verifier_address) external {
-        verifier=Verifier(verifier_address);
+    //function updateVerifier(address verifier_address) external {
+    //    verifier = Verifier(verifier_address);
+    //}
+
+    function updateVerifier(uint256 accountNR, address verifier_address) external {
+        verifier[accountNR] = Verifier(verifier_address);
     }
 
     function initModel(int256[][] calldata local_weights, int256[] calldata local_bias)external{
@@ -168,12 +174,15 @@ contract FederatedModel{
     }
     //
     //
-   function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
+    //Modi
+    //function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
+    function update_with_proof(uint256 accountNR, int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
         uint[209] memory new_input;
         for(uint256 i=0; i < 209; i++){
             new_input[i] = input[i];
         }
-        require(this.checkZKP(a,b,c,new_input));
+        //Modi
+        require(this.checkZKP(accountNR, a,b,c,new_input));
         bool newUser=true;
         //bool firstUser=true;
         address user=tx.origin;
@@ -315,10 +324,10 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
         precision=newPrecision;
     }
 
-
-    function checkZKP(uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[209] memory input) public returns(bool) {
+    //Modi
+    function checkZKP(uint256 accountNR, uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[209] memory input) public returns(bool) {
         Verifier.Proof memory proof = Verifier.Proof(Pairing.G1Point(a[0],a[1]),Pairing.G2Point(b[0],b[1]),Pairing.G1Point(c[0],c[1]));
-        return verifier.verifyTx(proof,input);
+        return verifier[accountNR].verifyTx(proof,input);
     }
 
     function stopTraining() external onlyAdmin{

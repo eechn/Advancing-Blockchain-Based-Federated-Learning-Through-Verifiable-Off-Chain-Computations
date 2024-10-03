@@ -32,21 +32,30 @@ class BlockChainConnection:
         with open(self.config["DEFAULT"]["RContractABIPAth"]) as f:
             self.RcontractABI=json.load(f)["abi"]
         self.RcontractDeployed=self.web3Connection.eth.contract(address=self.RegisterContractAddress,abi=self.RcontractABI)
+        
 
     def init_contract(self,accountNR):
-        if self.is_connected() and accountNR == 0:
+        #Modi 
+        #if self.is_connected() and accountNR == 0:
+        if self.is_connected():
             np.random.seed(4)
             weights = np.random.randn(self.config["DEFAULT"]["OutputDimension"],self.config["DEFAULT"]["InputDimension"])*self.config["DEFAULT"]["Precision"]/5
             bias = np.random.randn(self.config["DEFAULT"]["OutputDimension"],)*self.config["DEFAULT"]["Precision"]/5
             weights = [[int(x) for x in y] for y in weights]
             bias = [int(x) for x in bias]
-            thxHash= self.FLcontractDeployed.functions.initModel(weights,bias).transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            #thxHash= self.FLcontractDeployed.functions.initModel(weights,bias).transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            thxHash= self.FLcontractDeployed.functions.initModel(weights,bias).transact({"from": self.web3Connection.eth.accounts[0]})
             self.__await_Trainsaction(thxHash)
-            thxHash= self.FLcontractDeployed.functions.map_temp_to_global().transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            #thxHash= self.FLcontractDeployed.functions.map_temp_to_global().transact({"from": self.web3Connection.eth.accounts[accountNR]})
+            thxHash= self.FLcontractDeployed.functions.map_temp_to_global().transact({"from": self.web3Connection.eth.accounts[0]})
             self.__await_Trainsaction(thxHash)
-            thxHash = self.FLcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            #Modi 
+            #thxHash = self.FLcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            thxHash = self.FLcontractDeployed.functions.updateVerifier(accountNR, self.config["DEFAULT"]["VerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[accountNR]})
             self.__await_Trainsaction(thxHash)
-            thxHash = self.RcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["RegisterVerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            #Modi 
+            #thxHash = self.RcontractDeployed.functions.updateVerifier(self.config["DEFAULT"]["RegisterVerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[0]})
+            thxHash = self.RcontractDeployed.functions.updateVerifier(accountNR, self.config["DEFAULT"]["RegisterVerifierContractAddress"]).transact({"from": self.web3Connection.eth.accounts[accountNR]})
             self.__await_Trainsaction(thxHash)
 
     def __check_ZKP(self, proof):
@@ -130,12 +139,13 @@ class BlockChainConnection:
             print(f"AccountNr = {accountNR}: return newround in roundUpdateOutstanding() in BlockChainConnection.py" , newround, sep=" ")
             return newround
 
+    #Modi accountNR inside update_wit_proof function in FLcontractDeployed
     def __update_with_proof(self,weights,bias,accountNR,proof):
         try:
             a,b,c,inputs=self.__check_ZKP(proof)
             weights = [[int(x) for x in y] for y in weights]
             bias = [int(x) for x in bias]
-            thxHash = self.FLcontractDeployed.functions.update_with_proof(weights, bias,a,b,c,inputs).transact(
+            thxHash = self.FLcontractDeployed.functions.update_with_proof(accountNR, weights, bias,a,b,c,inputs).transact(
             {"from": self.web3Connection.eth.accounts[accountNR]})
         except Exception as e:
             print("in update_with_proof() validation check: ", e)

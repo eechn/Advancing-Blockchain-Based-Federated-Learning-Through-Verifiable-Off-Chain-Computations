@@ -1,7 +1,7 @@
 import os, sys
 #sys.path.append("/Users/chaehyeon/Documents/DPNM/2023/TUB/Advancing-Blockchain-Based-Federated-Learning-Through-Verifiable-Off-Chain-Computations")
-#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.Edge_Device.Encryption import Encryption
 import numpy as np
 import pandas as pd

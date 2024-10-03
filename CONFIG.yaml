@@ -11,7 +11,7 @@ DEFAULT:
   LearningRate: 1000
   Precision: 10000
   WaitingTime: 2
-  BatchSize: 10
+  BatchSize: 30
   Rounds : 300
   TestFilePath: "/home/block/thesis_CHLEE/data/test.txt"
   TrainFilePath: "/home/block/thesis_CHLEE/data"
@@ -25,10 +25,10 @@ DEFAULT:
 
   ResponseVariable: "Activity"
   EtheriumRPCServer: "http://141.223.163.119:8545"
-  FLContractAddress: "0xEa9f8A1f91d90E1EC9B5FCe9c7340a3BD2DA5D3F"  
-  VerifierContractAddress: "0x56Dc8e8Da72935D9d46c08e0BA207C883AfE1C34"
-  RegisterContractAddress: "0xc762502b30019905F01c557b99E17083F8A07D9F"  
-  RegisterVerifierContractAddress: "0x2FDc62F33Fd555d49d313718Ea3D45D0cBF805Ad"
+  FLContractAddress: "0x268a9232a66230096805A62910c2A1931792A918"  
+  VerifierContractAddress: "0x82f7DaE5133Dc97AAbC94c7572FcfCED84A31FD4"
+  RegisterContractAddress: "0x2f3A879cf12343a2f0F157e325fe067458b9Fb9A"
+  RegisterVerifierContractAddress: "0x2480e2f1f46c447d530ae37be2a08CA3ebf8B0a5"
   ZokratesPath: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/ZoKrates/root.zok"
   VerificationBase: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Verification/SAVED_VERIFYER_10/"
   FLContractABIPAth: "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Blockchain/Truffle/build/contracts/FederatedModel.json"

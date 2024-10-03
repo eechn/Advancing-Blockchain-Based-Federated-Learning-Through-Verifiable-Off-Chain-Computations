@@ -13,7 +13,7 @@ module.exports = function (deployer) {
   //deployer.deploy(FederatedModel,data.DEFAULT.InputDimension,data.DEFAULT.OutputDimension,data.DEFAULT.LearningRate,data.DEFAULT.Precision,data.DEFAULT.BatchSize,data.DEFAULT.IntervalTime);
   deployer.deploy(verifier,{gas:data.DEFAULT.Gas});
   //deployer.deploy(Registration);
-  //deployer.deploy(RegistrationVerifier,{gas:data.DEFAULT.Gas});
+  deployer.deploy(RegistrationVerifier,{gas:data.DEFAULT.Gas});
 };
 
 

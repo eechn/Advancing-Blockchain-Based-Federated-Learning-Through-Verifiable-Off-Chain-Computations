@@ -2,7 +2,7 @@ from flask import Flask, abort
 import os
 import json
 import sys
-sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices")
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/")
 
 from pycrypto.zokrates_pycrypto.eddsa import PrivateKey, PublicKey
 import hashlib
