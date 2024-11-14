@@ -1,7 +1,7 @@
 import hashlib
 import sys, os
-#sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices")
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from pycrypto.zokrates_pycrypto.eddsa import PrivateKey, PublicKey
 from pycrypto.zokrates_pycrypto.utils import write_signature_for_zokrates_cli
 
@@ -70,7 +70,7 @@ class Encryption:
 			return res
 
 		#For generating leaves
-		base_path = "/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices/Edge_Device/"
+		base_path = "/home/dpnm/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/Devices/Edge_Device/"
 		if len(data) == 6:
 			out_path = base_path + "poseidon/poseidon_leaf"
 			abi_path = base_path + "poseidon/leaf.json"

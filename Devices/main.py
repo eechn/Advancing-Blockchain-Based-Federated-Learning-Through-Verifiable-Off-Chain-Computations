@@ -20,12 +20,12 @@ def start_Device(deviceName,accountNr,blockchain_connection,config_file):
 
 
 if __name__ == '__main__':
-    config_file = read_yaml("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CONFIG.yaml")
+    config_file = read_yaml("/home/dpnm/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CONFIG.yaml")
     blockchain_connection=BlockChainConnection(config_file=config_file)
     blockchain_connection.connect()
     for i in range(config_file["DEFAULT"]["NumberOfParticipants"]):
-        thread=threading.Thread(target= start_Device,args=["Device_4",3,blockchain_connection,config_file])
-        #thread=threading.Thread(target= start_Device,args=["Device_1",0,blockchain_connection,config_file])
+        #thread=threading.Thread(target= start_Device,args=["Device_8",7,blockchain_connection,config_file])
+        thread=threading.Thread(target= start_Device,args=["Device_1",0,blockchain_connection,config_file])
         thread.start()
         time.sleep(1)
 

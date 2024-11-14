@@ -33,10 +33,12 @@ contract FederatedModel{
     uint256 private batchSize;
     //Modi
     //Verifier private verifier;
-    Verifier[4] private verifier;
+    Verifier[8] private verifier;
     bool private initialized = false;
     //uint256 [][] private publicKey;
     mapping (uint => uint256[]) private publicKey;
+    //Modi
+    mapping(uint256 => bool) public hashExists;
 
 
     constructor(uint256 id,uint256 od,int256 learning_rate_,int256 precision_,uint256 batchSize_,uint256 updateInterval_)public{
@@ -51,13 +53,21 @@ contract FederatedModel{
         round_Number=1;
     }
 
-
+ 
     //function updateVerifier(address verifier_address) external {
     //    verifier = Verifier(verifier_address);
     //}
 
     function updateVerifier(uint256 accountNR, address verifier_address) external {
         verifier[accountNR] = Verifier(verifier_address);
+    }
+
+    function addHash(uint256 hash) public {
+        hashExists[hash] = true;
+    }
+
+    function checkHash(uint256 hash) public view returns (bool) {
+        return hashExists[hash];
     }
 
     function initModel(int256[][] calldata local_weights, int256[] calldata local_bias)external{
@@ -176,13 +186,19 @@ contract FederatedModel{
     //
     //Modi
     //function update_with_proof(int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
-    function update_with_proof(uint256 accountNR, int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[209] calldata input) external TrainingMode {
-        uint[209] memory new_input;
-        for(uint256 i=0; i < 209; i++){
+    function update_with_proof(uint256 accountNR, int256[][] calldata local_weights, int256[] calldata local_bias,uint[2] calldata a,uint[2][2] calldata b, uint[2] calldata c, uint[210] calldata input) external TrainingMode {
+        uint[210] memory new_input;
+        for(uint256 i=0; i < 210; i++){
             new_input[i] = input[i];
         }
         //Modi
         require(this.checkZKP(accountNR, a,b,c,new_input));
+        //Modi
+        uint256 merkleRoot = new_input[new_input.length -1];
+        require(!this.checkHash(merkleRoot));
+        this.addHash(merkleRoot);
+
+
         bool newUser=true;
         //bool firstUser=true;
         address user=tx.origin;
@@ -325,7 +341,7 @@ function update_without_proof(int256[][] calldata local_weights, int256[] callda
     }
 
     //Modi
-    function checkZKP(uint256 accountNR, uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[209] memory input) public returns(bool) {
+    function checkZKP(uint256 accountNR, uint[2] memory a,uint[2][2] memory b, uint[2] memory c, uint[210] memory input) public returns(bool) {
         Verifier.Proof memory proof = Verifier.Proof(Pairing.G1Point(a[0],a[1]),Pairing.G2Point(b[0],b[1]),Pairing.G1Point(c[0],c[1]));
         return verifier[accountNR].verifyTx(proof,input);
     }

@@ -7,7 +7,7 @@ pragma experimental ABIEncoderV2;
 contract Registration{
     address public administrator;
     mapping (uint => string) private Commitment;
-    RegistrationVerifier[4] private verifier;
+    RegistrationVerifier[8] private verifier;
 
     //Modi
     //function updateVerifier(address verifier_address) external {

@@ -23,10 +23,11 @@ from Devices.utils.utils import read_yaml
 import hashlib, random
 #+++++fix
 from Devices.Edge_Device.Data import Data
+import Devices.Edge_Device.DP as DP
 from Devices.Edge_Device.Data import write_args_for_zokrates_cli
 
 
-
+BChash = "0x80feb367812ae0f689b0fbf8143dd81360a04cd7cc2adc9b5c4fd918c2a75097"
 def print_report(device,model,X_test,y_test):
     print(f"{device}",classification_report(y_test,model.predict(X_test),zero_division=0))
 
@@ -138,6 +139,7 @@ class MiddleWare:
         self.precision=None
         self.batchSize=None
         self.round=0
+        self.Laplace = []
 
     #+++++fix
     def _register_data_source_for_data_authenticity(self):
@@ -149,17 +151,25 @@ class MiddleWare:
             print("middleware")
             print(e)
         print(self.data.get_Commitment())
-        
- 
-    def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
-        
-        x_train = x_train * self.precision
-        b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
-        x_train = x_train.astype(int)
-        
-        #Get commitment from Blockchain
-        commitment = self.data.get_Commitment()
 
+    #def addNoise(self, w, b, noise):
+    def addNoise(self, w, noise):
+        ac = self.config["DEFAULT"]["OutputDimension"] #6
+        fe = self.config["DEFAULT"]["InputDimension"] #9
+
+        for i in range(ac):
+            for j in range(fe):
+                w[i][j] = w[i][j] + noise[i * fe + j]
+
+        '''
+        for i in range(ac):
+            b[i] = b[i] + noise[ac * fe + i]
+        '''
+
+        #return w, b
+        return w
+
+    def __generate_Proof(self, w, b, w_new, b_new, x_train, y_train, learning_rate):
         
         def args_parser(args):
             res = ""
@@ -179,7 +189,35 @@ class MiddleWare:
             res = res[:-1]
             return res
 
+        x_train = x_train * self.precision
+        b_new = b_new.reshape(self.config["DEFAULT"]["OutputDimension"],)
+        x_train = x_train.astype(int)
+        
+        #Get commitment from Blockchain
+        commitment = self.data.get_Commitment()
 
+        x, x_sign = self.data.convert_matrix(x_train)
+        nLeaf, merkleRoot, merkleTree = self.data.auth.get_merkletree_poseidon(x, x_sign, y_train)
+        print(f"{self.deviceName}'s merkleRoot: {merkleRoot}")
+        padding = bytes(32)
+        padded_512_msg = bytes.fromhex(merkleRoot) + padding
+        signature = self.data.auth.get_signature(padded_512_msg)
+        merkle_args = write_args_for_zokrates_cli(self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
+        #merkle_args = write_args_for_zokrates_cli( x, x_sign, y_train, self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
+
+        p = DP.getEntropy(BChash, merkleRoot, self.deviceName)
+        noise = DP.getNoise(p, self.Laplace)
+        w_new = self.addNoise(w_new, noise)
+        
+        Lap, Lap_sign = Data.convert_matrix(self.Laplace)
+        #noise, noise_sign = getNoise_sign(p, Lap, Lap_sign)
+        noise_args = [int(BChash, 16), Lap, Lap_sign]
+        noise_args = args_parser(noise_args).split(" ")
+        
+        #print(args_parser(noise))
+        #print(args_parser(noise_sign))
+        
+        
         zokrates = "zokrates"
         zok_path = self.config["TEST"]["ZokratesPath"]
         verification_path = self.config["TEST"]["VerificationBase"]
@@ -194,19 +232,13 @@ class MiddleWare:
         bias, bias_sign = self.data.convert_matrix(b)
         weights_new, _ = self.data.convert_matrix(w_new)
         bias_new, _ = self.data.convert_matrix(b_new)
-        x, x_sign = self.data.convert_matrix(x_train)
+        #x, x_sign = self.data.convert_matrix(x_train)
         args = [weights, weights_sign, bias, bias_sign, x, x_sign, y_train, learning_rate, self.precision, weights_new, bias_new]
-        witness_args = args_parser(args).split(" ")
-
         
-        nLeaf, merkleRoot, merkleTree = self.data.auth.get_merkletree_poseidon(x, x_sign, y_train)
-        #print(f"{self.deviceName}'s merkleRoot: {merkleRoot}")
-        padding = bytes(32)
-        padded_512_msg = bytes.fromhex(merkleRoot) + padding
-        signature = self.data.auth.get_signature(padded_512_msg)
-        merkle_args = write_args_for_zokrates_cli(self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
-        #merkle_args = write_args_for_zokrates_cli( x, x_sign, y_train, self.data.auth.pk, signature, padded_512_msg, commitment).split(" ")
+        witness_args = args_parser(args).split(" ")
         witness_args.extend(merkle_args)
+        witness_args.extend(noise_args)
+        
 
 
         with open("./zokrates_input.txt", "w+") as file:
@@ -240,6 +272,9 @@ class MiddleWare:
 
         with open(proof_path,'r+') as f:
             self.proof=json.load(f)
+        
+        #return w_new, b_new
+        return w_new
 
 
     def __init_Consumer(self,DeviceName,callBackFunction):
@@ -263,6 +298,7 @@ class MiddleWare:
         self.blockChainConnection.init_contract(self.accountNR)
         self.round=self.blockChainConnection.get_RoundNumber(self.accountNR)
         self._register_data_source_for_data_authenticity()
+        self.Laplace = DP.deterministic_laplace(10, self.config["DEFAULT"]["Precision"]) 
         while self.config["DEFAULT"]["Rounds"]>self.round:
             print(f"{self.accountNR}, {self.deviceName}, round: ", self.round)
             outstanding_update=self.blockChainConnection.roundUpdateOutstanding(self.accountNR)
@@ -299,7 +335,8 @@ class MiddleWare:
                 b = self.model.get_bias()
                 if self.config["DEFAULT"]["PerformProof"]:
                     tp = time.time()
-                    self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
+                    #w, b = self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
+                    w = self.__generate_Proof(global_weights, global_bias, w, b, self.model.x_train, self.model.y_train, lr)
                     #print(f"{self.accountNR}, {self.deviceName} generated proof: " , self.proof, sep=" ")
                     self.analytics.add_round_proof_times(self.round, time.time() - tp)
                 self.model.reset_batch()

@@ -4,7 +4,7 @@ import time
 import numpy as np
 from web3 import Web3
 import sys, os
-sys.path.append("/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
+sys.path.append("/home/dpnm/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning")
 #sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from Devices.utils.utils import read_yaml
 import json
@@ -32,7 +32,6 @@ class BlockChainConnection:
         with open(self.config["DEFAULT"]["RContractABIPAth"]) as f:
             self.RcontractABI=json.load(f)["abi"]
         self.RcontractDeployed=self.web3Connection.eth.contract(address=self.RegisterContractAddress,abi=self.RcontractABI)
-        
 
     def init_contract(self,accountNR):
         #Modi 
@@ -139,7 +138,7 @@ class BlockChainConnection:
             print(f"AccountNr = {accountNR}: return newround in roundUpdateOutstanding() in BlockChainConnection.py" , newround, sep=" ")
             return newround
 
-    #Modi accountNR inside update_wit_proof function in FLcontractDeployed
+
     def __update_with_proof(self,weights,bias,accountNR,proof):
         try:
             a,b,c,inputs=self.__check_ZKP(proof)

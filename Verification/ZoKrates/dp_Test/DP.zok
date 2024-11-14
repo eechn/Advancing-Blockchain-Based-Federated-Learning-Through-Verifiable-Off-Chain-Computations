@@ -1,0 +1,104 @@
+import "hashes/poseidon/poseidon" as poseidon;
+import "utils/pack/bool/unpack256" as unpack256;
+import "utils/casts/bool_array_to_u32_array" as bool_to_u32;
+import "utils/casts/u32_to_field" as u32_to_field;
+
+const field max = 0-1;
+const field threshold= 20888242871839275222246405745257275088548364400416034343698204186575808495617;
+const u32  fe = 9;
+const u32  ac = 6;
+const field ac_f=6;
+
+def add(field a, field b, field a_sign, field b_sign)-> (field, field){
+    field a_cleansed = a_sign == 0 ? a : max-a+1;
+    field b_cleansed = b_sign == 0 ? b : max-b+1;
+    field c = ( a_sign == b_sign && a_sign == 1 ? (max+1-a_cleansed-b_cleansed) : a+b );
+    field c_sign =  c > threshold ? 1 : 0;
+    return (c, c_sign);
+}
+
+def getEntropy(field BC_hash, field root) -> u32[64] {
+    
+    field mut hash = 0;
+    hash = poseidon([BC_hash, root]);
+    log("{}", hash);
+
+    bool[256] mut data_to_bits = unpack256(hash);
+	u32[8] mut seeds = bool_to_u32(data_to_bits);
+    u32 b = 99;
+    log("{}", seeds);
+
+    field mut seed = 0;
+    u32[8] mut p_candidate = [0; 8];
+    u32[64] mut p = [0; 64];
+    for u32 i in 0..8 {
+        seed = u32_to_field(seeds[i]);
+        log("{}", seed);
+        hash = poseidon([seed, BC_hash]);
+        data_to_bits = unpack256(hash);
+        p_candidate = bool_to_u32(data_to_bits);
+        log("{}", p_candidate);
+        for u32 j in 0..8{
+            p[i*8 + j] = p_candidate[j] % b;
+        }
+	}
+
+    log("{}", p);
+    return p;
+}
+
+def getNoise(field[99] Lap, field[99] Lap_sign, u32[64] p) -> (field[64], field[64]) {
+    field[64] mut noise = [0; 64];
+    field[64] mut noise_sign = [0; 64];
+    for u32 i in 0..64 {
+        noise[i] = Lap[p[i]];
+        noise_sign[i] = Lap_sign[p[i]];
+    }
+
+    return (noise, noise_sign);
+}
+//def main(field BC_hash, field root, u32[8] entropy, field[99] Lap, field[99] Lap_sign, field[64] noise, field[64] noise_sign) -> bool {
+def main(field BC_hash, field root, field[99] Lap, field[99] Lap_sign, field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, field[ac][fe] w_noise, field[ac] b_noise) -> (bool, field[ac][fe]) {
+
+    u32[64] p = getEntropy(BC_hash, root);
+    (field[64], field[64]) noise_zok = getNoise(Lap, Lap_sign, p);
+
+    field[ac][fe] mut w_temp = [[0; fe]; ac];
+    field[ac][fe] mut w_sign_temp = [[0; fe]; ac];
+    field[ac] mut b_temp = [0; ac];
+    field[ac] mut b_sign_temp = [0; ac];
+
+    for u32 i in 0..ac {
+        for u32 j in 0..fe {
+            (field, field) mut res = add(w[i][j], noise_zok.0[i*fe + j], w_sign[i][j], noise_zok.1[i*fe + j]);
+            w_temp[i][j] = res.0;
+            w_sign_temp[i][j] = res.1;
+        }
+    }
+    /*
+    for u32 i in 0..ac {
+        (field, field) mut res = add(b[i], noise_zok.0[ac * fe + i], b_sign[i], noise_zok.1[ac * fe + i]);
+        b_temp[i] = res.0;
+        b_sign_temp[i] = res.1;
+    }
+    */
+
+    field mut res = 0;
+    for u32 j in 0..fe {
+        for u32 i in 0..ac {
+            res = res + (w_temp[i][j] == w_noise[i][j] ? 1 : 0);
+        }
+    }
+    /*
+    for u32 i in 0..ac {
+        res = res + (b_temp[i] == b_noise[i] ? 1 : 0);
+    }
+    */
+    
+
+    bool isVerified = res == 54 ? true : false;
+    log("{}", isVerified);
+    log("step 2 b_new is {}", b);
+    
+    return (isVerified, w_temp);
+}

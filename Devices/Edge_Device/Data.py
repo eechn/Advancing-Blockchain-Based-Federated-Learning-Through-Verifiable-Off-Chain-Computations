@@ -44,7 +44,9 @@ class Data:
         else:
             self.curr_batch=pd.concat([self.curr_batch,data])
     
-    def convert_matrix(self, m):
+    @staticmethod
+    #def convert_matrix(self, m):
+    def convert_matrix(m):
         max_field = 21888242871839275222246405745257275088548364400416034343698204186575808495617
         m=np.array(m)
         return np.where(m < 0, max_field + m, m), np.where(m > 0, 0, 1)
@@ -57,7 +59,8 @@ class Data:
     def get_vc(self):
         pk_x = self.auth.pk.p.x.n
         pk_y = self.auth.pk.p.y.n
-        url = "http://141.223.163.119:5000/vc/" + str(pk_x) + "/" + str(pk_y)
+        #url = "http://141.223.163.119:5000/vc/" + str(pk_x) + "/" + str(pk_y)
+        url = "http://127.0.0.1:5000/vc/" + str(pk_x) + "/" + str(pk_y)
         print("*****get vc")
 
         response = requests.get(url=url)

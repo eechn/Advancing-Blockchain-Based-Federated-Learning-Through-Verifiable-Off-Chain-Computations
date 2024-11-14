@@ -7,12 +7,12 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 
 module.exports = function (deployer) {
- let fileContents = fs.readFileSync('/home/block/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CONFIG.yaml', 'utf8');
+ let fileContents = fs.readFileSync('/home/dpnm/thesis_CHLEE/End-to-End-Verifiable-Decentralized-Federated-Learning/CONFIG.yaml', 'utf8');
   let data = yaml.load(fileContents);
   deployer.deploy(Migrations);
-  //deployer.deploy(FederatedModel,data.DEFAULT.InputDimension,data.DEFAULT.OutputDimension,data.DEFAULT.LearningRate,data.DEFAULT.Precision,data.DEFAULT.BatchSize,data.DEFAULT.IntervalTime);
+  deployer.deploy(FederatedModel,data.DEFAULT.InputDimension,data.DEFAULT.OutputDimension,data.DEFAULT.LearningRate,data.DEFAULT.Precision,data.DEFAULT.BatchSize,data.DEFAULT.IntervalTime);
   deployer.deploy(verifier,{gas:data.DEFAULT.Gas});
-  //deployer.deploy(Registration);
+  deployer.deploy(Registration);
   deployer.deploy(RegistrationVerifier,{gas:data.DEFAULT.Gas});
 };
 

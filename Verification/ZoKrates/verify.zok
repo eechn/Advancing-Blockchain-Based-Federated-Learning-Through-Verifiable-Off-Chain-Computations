@@ -1,5 +1,8 @@
 import "utils/pack/bool/unpack256" as unpack256;
+//import "utils/pack/bool/pack" as pack;
 import "utils/casts/bool_array_to_u32_array" as bool_to_u32;
+//import "utils/casts/u32_array_to_bool_array" as to_bool_array;
+import "utils/pack/u32/pack256" as to_field;
 import "hashes/sha256/embed/512bitPadded" as sha256;
 import "hashes/sha256/512bitPadded" as sha256_u32;
 import "./sha256_multipleArgs" as sha256Chunk;
@@ -12,10 +15,10 @@ import "signatures/verifyEddsa" as verifyEddsa;
 import "ecc/babyjubjubParams" as context;
 
 
-const u32 bs = 10;
+const u32 bs = 20;
 const u32 fe = 9;
-const u32 total_hash_count = 37;
-const u32 TREE_DEPTH = 4;
+const u32 total_hash_count = 71;
+const u32 TREE_DEPTH = 5;
 
 def hash(field data) -> u32[8] {
 	bool[256] padding = [false; 256];
@@ -197,7 +200,7 @@ def merkleTreeProof<DEPTH>(u32[8] root, MerkleTreeProofStruct<DEPTH> proof) -> b
 }
 
 //def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, MerkleTreeProofStruct<TREE_DEPTH> proof, u32 idx) -> bool {
-def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, u32[8] commitment) -> bool {
+def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, field[2] R, field S, field[2] A, u32[8] M0, u32[8] M1, u32[8] commitment) -> (bool, field) {
 	/*
 	u32[total_hash_count][8] mut merkleTree = generate_merkletree_batch(x_train, x_sign, y_train);
 	u32[8] mut digest= batch_hash::<fe>(x_train[idx]);
@@ -231,7 +234,14 @@ def main(field [bs][fe] x_train, field [bs][fe] x_sign, field [bs] y_train, fiel
 	bool isVerified_merkle = M0 == merkleRoot ? true : false;
 	log("isVerified_merkle: {}", isVerified_merkle);
 	
+	//return isVerified && isVerified_merkle && isVerified_Commitment;
+	
+	//bool[256] Root_bits = to_bool_array(merkleRoot);
+	//pack(Root_bits);
+	field Root = to_field(merkleRoot);
+	log("{}", Root);
 
-	return isVerified && isVerified_merkle && isVerified_Commitment;
+	return (isVerified && isVerified_merkle && isVerified_Commitment, Root);
 
 }
+

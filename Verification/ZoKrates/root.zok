@@ -3,6 +3,7 @@ from "utils/casts/u32_to_field.zok" import main as u32_to_field;
 from "utils/casts/field_to_u64.zok" import main as field_to_u64;
 from "utils/casts/u64_to_field.zok" import main as u64_to_field;
 from "./verify.zok" import main as data_authenticity_check;
+from "./dp_Test/DP.zok" import main as DP;
 from "./verify.zok" import MerkleTreeProofStruct, TREE_DEPTH;
 
 const field max = 0-1;
@@ -10,7 +11,7 @@ const field threshold= 208882428718392752222464057452572750885483644004160343436
 const u32  fe = 9;
 const u32  ac = 6;
 const field ac_f=6;
-const u32  bs = 10;
+const u32  bs = 20;
 
 def add(field a, field b, field a_sign, field b_sign)-> (field, field){
     field a_cleansed = a_sign == 0 ? a : max-a+1;
@@ -126,10 +127,24 @@ def backward_propagation_layer(field[ac][fe] w, field[ac] b, field[fe] x, field[
 
 //,field[bs][fe] x_train, field[bs][fe] x_train_sign ,field[bs] y_train,field learning_rate,field precision
 //def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, private MerkleTreeProofStruct<TREE_DEPTH> proof, private u32 idx) -> bool{
-def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, u32[8] commitment) -> bool{
+def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, private field[bs][fe] x_train, private field[bs][fe] x_train_sign, private field[bs] y_train, field learning_rate, field pr, field[ac][fe] w_new, field[ac] b_new, private field[2] R, private field S, field[2] A, u32[8] M0, u32[8] M1, u32[8] commitment, private field BC_hash, private field[99] Lap, private field[99] Lap_sign) -> (bool, field){
 
-    bool isVerified = data_authenticity_check(x_train, x_train_sign, y_train, R, S, A, M0, M1, commitment);
-    assert(isVerified);
+    log("w is {}", w);
+    log("w sign is {}", w_sign);
+    log("b is {}", b);
+    log("b is {}", b_sign);
+    log("x_train is {}", x_train);
+    log("x_train_sign is {}", x_train_sign);
+    log("y_train is {}", y_train);
+    log("pr is {}", pr);
+    log("w new is {}", w_new);
+    log("stpe 1 b_new is {}", b_new);
+
+    //bool isVerified = data_authenticity_check(x_train, x_train_sign, y_train, R, S, A, M0, M1, commitment);
+    //assert(isVerified);
+
+    (bool, field) isValid = data_authenticity_check(x_train, x_train_sign, y_train, R, S, A, M0, M1, commitment);
+    assert(isValid.0);
 
     field[ac] mut output_layer = [0;ac];
     field[ac] mut out_sign = [0;ac];
@@ -166,19 +181,25 @@ def main(field[ac][fe] w, field[ac][fe] w_sign, field[ac] b, field[ac] b_sign, p
        w_sign_temp = res_back.2;
        b_sign_temp = res_back.3;
     }
+    (bool, field[ac][fe]) mut dpcheck = DP(BC_hash, isValid.1, Lap, Lap_sign, w_temp, w_sign_temp, b_temp, b_sign_temp, w_new, b_new);
+
     field mut res = 0;
     for u32 i in 0..ac {
         res = res + (b_temp[i] == b_new[i] ? 1 : 0);
     }
      for u32 j in 0..fe {
         for u32 i in 0..ac {
-            res = res + (w_temp[i][j] == w_new[i][j] ? 1 : 0);
+            res = res + (dpcheck.1[i][j] == w_new[i][j] ? 1 : 0);
         }
     }
-
+    
+    log("res is {}", dpcheck.0);
     log("res is {}", res);
+    assert(dpcheck.0);
+    log("step 3 b_new is {}", b_new);
 
-    return res == u32_to_field(ac + fe * ac);
+    //return res == u32_to_field(ac + fe * ac);
+    return ((res == u32_to_field(ac + fe * ac)), isValid.1) ;
 }
 
 
